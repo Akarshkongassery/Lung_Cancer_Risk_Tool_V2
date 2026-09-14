@@ -259,13 +259,7 @@ def render_project_header() -> None:
         if eu_flag:
             st.image(str(eu_flag), width=90)
 
-    st.markdown(
-        '<div class="project-strip">'
-        '<div class="project-kicker">PHASE IV AI · Cancer validation use case</div>'
-        '<div class="project-name">Privacy Compliant Health Data as a Service for AI Development</div>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
+  
     st.markdown(
         f'<div class="hero"><h1>{APP_TITLE}</h1>'
         '<p>Primary-care decision support for assessing lung-cancer risk in patients presenting with respiratory symptoms</p></div>',
