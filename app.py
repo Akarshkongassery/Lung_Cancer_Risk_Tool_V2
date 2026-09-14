@@ -246,6 +246,11 @@ def render_project_header() -> None:
     ntu_logo = first_existing_asset("NTUHorizontal.png", "ntu_logo.png")
     eu_flag = first_existing_asset("EUflag.png", "eu_flag.png")
 
+    st.markdown(
+    "<div style='height: 30px;'></div>",
+    unsafe_allow_html=True,
+)
+
     logo_left, logo_middle, logo_right = st.columns([2.2, 1.1, 0.7])
     with logo_left:
         if phase_logo:
