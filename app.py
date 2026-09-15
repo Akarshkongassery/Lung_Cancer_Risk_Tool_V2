@@ -288,15 +288,15 @@ def render_project_header() -> None:
     logo_left, logo_middle, logo_right = st.columns(3)
     with logo_left:
         if phase_logo:
-            st.image(str(phase_logo), width=340)
+            st.image(str(phase_logo), width=240)
         else:
             st.markdown("### PHASE IV AI")
     with logo_middle:
         if ntu_logo:
-            st.image(str(ntu_logo), width=340)
+            st.image(str(ntu_logo), width=240)
     with logo_right:
         if eu_flag:
-            st.image(str(eu_flag), width=0)
+            st.image(str(eu_flag), width=240)
    
 
   
