@@ -285,29 +285,19 @@ def render_project_header() -> None:
 )
 
     # logo_left, logo_middle, logo_right = st.columns([2.2, 1.1, 0.7])
-    logo_left, logo_middle, logo_right = st.columns(2)
-    # with logo_left:
-    #     if phase_logo:
-    #         st.image(str(phase_logo), width=300)
-    #     else:
-    #         st.markdown("### PHASE IV AI")
-    # with logo_middle:
-    #     if ntu_logo:
-    #         st.image(str(ntu_logo), width=190)
-    # with logo_right:
-    #     if eu_flag:
-    #         st.image(str(eu_flag), width=90)
+    logo_left, logo_middle, logo_right = st.columns(3)
     with logo_left:
-    if phase_logo:
-        st.image(str(phase_logo), width=340)
-    else:
-        st.markdown("### PHASE IV AI")
-
-    with logo_right:
+        if phase_logo:
+            st.image(str(phase_logo), width=340)
+        else:
+            st.markdown("### PHASE IV AI")
+    with logo_middle:
         if ntu_logo:
             st.image(str(ntu_logo), width=340)
-        else:
-            st.warning("NTU logo file not found")
+    with logo_right:
+        if eu_flag:
+            st.image(str(eu_flag), width=0)
+   
 
   
     st.markdown(
