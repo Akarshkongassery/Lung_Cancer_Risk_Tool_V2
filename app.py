@@ -198,7 +198,18 @@ def inject_css() -> None:
     margin-top: 8px;
     margin-bottom: 16px;
 }
-        .hero h1 {font-size:2rem; margin:0 0 5px 0; color:white;}
+        .hero h1 {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    margin: 0 0 8px 0;
+    color: white;
+}
+.hero p {
+    font-size: 1rem;
+    line-height: 1.4;
+    margin: 0;
+    opacity: 0.88;
+}
         .hero p {margin:0; opacity:.88;}
         .clinical-card {border:1px solid #DCE7E7; border-radius:14px; padding:18px;
                         background:white; box-shadow:0 2px 10px rgba(19,62,67,.05);}
