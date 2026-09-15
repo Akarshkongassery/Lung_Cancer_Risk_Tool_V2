@@ -213,13 +213,29 @@ def inject_css() -> None:
         .hero p {margin:0; opacity:.88;}
         .clinical-card {border:1px solid #DCE7E7; border-radius:14px; padding:18px;
                         background:white; box-shadow:0 2px 10px rgba(19,62,67,.05);}
-        .risk-number {font-size:2.4rem; font-weight:750; line-height:1; color:#123D45;}
+        .risk-number {
+    font-size: 2.4rem;
+    font-weight: 750;
+    line-height: 1.15;
+    color: #7ED6D3;
+    margin: 6px 0 10px 0;
+}
         .eyebrow {font-size:.76rem; font-weight:700; letter-spacing:.08em;
                   text-transform:uppercase; color:#47727A;}
         .safety {background:#FFF4E5; border-left:5px solid #D97800; padding:14px 16px;
                  border-radius:8px; margin:10px 0;}
-        .prototype {background:#EAF3FF; border-left:5px solid #3156A3; padding:12px 15px;
-                    border-radius:8px; margin:10px 0;}
+        .prototype {
+    background: #DCEBFA;
+    color: #172B3A !important;
+    border-left: 5px solid #3156A3;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.prototype strong {
+    color: #172B3A !important;
+}
         .muted {color:#61747A; font-size:.9rem;}
         .project-strip {border:1px solid #284650; background:#101A21; border-radius:14px;
                         padding:13px 18px; margin-bottom:14px;}
