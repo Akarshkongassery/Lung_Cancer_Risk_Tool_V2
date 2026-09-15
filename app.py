@@ -452,17 +452,40 @@ def run_models(features: Mapping[str, Any], selected_ids: List[str]) -> Dict[str
 
 def prediction_card(prediction: Prediction) -> None:
     spec = MODEL_SPECS[prediction.model_id]
-    st.markdown('<div class="clinical-card">', unsafe_allow_html=True)
-    st.markdown(f'<div class="eyebrow">{prediction.model_name}</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="risk-number">{risk_badge(prediction.category)} {prediction.probability:.1%}</div>',
-        unsafe_allow_html=True,
-    )
-    st.write(f"**{prediction.category}**")
-    st.caption(f"Demonstration threshold: {prediction.threshold:.1%} · Input coverage: {prediction.input_coverage:.0%}")
-    st.progress(min(prediction.probability / max(prediction.threshold * 2.0, 0.01), 1.0))
-    st.caption(spec.population)
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    with st.container(border=True):
+        st.markdown(
+            f"#### {prediction.model_name}"
+        )
+
+        st.markdown(
+            f"""
+            <div class="risk-number">
+                {risk_badge(prediction.category)}
+                {prediction.probability:.1%}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.write(f"**{prediction.category}**")
+
+        st.caption(
+            f"Demonstration threshold: "
+            f"{prediction.threshold:.1%} · "
+            f"Input coverage: "
+            f"{prediction.input_coverage:.0%}"
+        )
+
+        st.progress(
+            min(
+                prediction.probability
+                / max(prediction.threshold * 2.0, 0.01),
+                1.0,
+            )
+        )
+
+        st.caption(spec.population)
 
 
 def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> None:
