@@ -190,8 +190,14 @@ def inject_css() -> None:
         section[data-testid="stSidebar"] [data-testid="stAlert"] div {
             color: #352A00 !important;
         }
-        .hero {background: linear-gradient(125deg,#092F3A,#14636B); color:white;
-               border-radius:18px; padding:24px 28px; margin-bottom:18px;}
+        .hero {
+    background: linear-gradient(125deg,#092F3A,#14636B);
+    color: white;
+    border-radius: 16px;
+    padding: 16px 26px;
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
         .hero h1 {font-size:2rem; margin:0 0 5px 0; color:white;}
         .hero p {margin:0; opacity:.88;}
         .clinical-card {border:1px solid #DCE7E7; border-radius:14px; padding:18px;
