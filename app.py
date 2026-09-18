@@ -463,24 +463,27 @@ def collect_assessment() -> Tuple[Dict[str, Any], Dict[str, Any]]:
         )
         other_history = c2.text_area("Other relevant history", placeholder="Optional clinical context")
 
-    with st.expander("5 · Clinical findings"):
-        c1, c2 = st.columns(2)
-        abnormal_exam = yes_no("Abnormal respiratory examination", "abnormal_exam")
-        concerning_imaging = yes_no("Relevant abnormal prior imaging", "prior_imaging")
-        performance = st.selectbox( "ECOG performance status", [
-                    "Not recorded",
-                    "0 — Fully active; no restriction",
-                    "1 — Restricted in strenuous activity but ambulatory",
-                    "2 — Ambulatory and capable of self-care; unable to work",
-                    "3 — Limited self-care; in bed or chair for more than 50% of the day",
-                    "4 — Completely disabled; totally confined to bed or chair",
-                ],
-                help=(
-                    "Select the category that best represents the patient's "
-                    "functional status at the time of assessment."
-                ),
-            )
-        clinical_notes = c2.text_area("Consultation notes", placeholder="Do not include direct patient identifiers")
+    with st.expander("5 · Functional status and additional information"):
+    performance = st.selectbox(
+        "ECOG performance status",
+        [
+            "Not recorded",
+            "0 — Fully active; no restriction",
+            "1 — Restricted in strenuous activity but ambulatory",
+            "2 — Ambulatory and capable of self-care; unable to work",
+            "3 — Limited self-care; in bed or chair for more than 50% of the day",
+            "4 — Completely disabled; totally confined to bed or chair",
+        ],
+        help=(
+            "Select the category that best represents the patient's "
+            "functional status at the time of assessment."
+        ),
+    )
+
+    clinical_notes = st.text_area(
+        "Additional clinical notes",
+        placeholder="Do not include direct patient identifiers",
+    )
 
     features: Dict[str, Any] = {
         "age": age,
