@@ -474,7 +474,7 @@ def collect_assessment() -> Tuple[Dict[str, Any], Dict[str, Any]]:
         "age": age,
         "gender_1": sex == "Male",
         "smk_qt_final_2_2": smoking,
-        "alc_units_day_7": alcohol,
+        "alc_units_day_7": alcohol_units_week,
         "bmifinal2": bmi if bmi_known else 25.0,
         "famhlg_1": family_lung or family_cancer,
         "familyhcancer_1": family_cancer,
@@ -498,7 +498,16 @@ def collect_assessment() -> Tuple[Dict[str, Any], Dict[str, Any]]:
     context = {
         "main_complaint": complaint,
         "duration": duration,
-        "pack_years": pack_years if pack_years_known else None,
+        "smoking_duration_years": smoking_duration_years,
+        "average_cigarettes_per_day": average_cigarettes_day,
+        "years_since_quitting": (
+            years_since_quitting
+            if smoking == "Former"
+            else 0
+        ),
+        "calculated_pack_years": calculated_pack_years,
+        "alcohol_units_per_week": alcohol_units_week,
+        "alcohol_category": alcohol_category,
         "recurrent_infection": recurrent_infection,
         "other_history": other_history,
         "abnormal_examination": abnormal_exam,
