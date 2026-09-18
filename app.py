@@ -514,8 +514,6 @@ def collect_assessment() -> Tuple[Dict[str, Any], Dict[str, Any]]:
             "alcohol_category": alcohol_category,
             "recurrent_infection": recurrent_infection,
             "other_history": other_history,
-            "abnormal_examination": abnormal_exam,
-            "abnormal_prior_imaging": concerning_imaging,
             "functional_status": performance,
             "consultation_notes": clinical_notes,
             "bmi_was_imputed": not bmi_known,
@@ -548,10 +546,6 @@ def render_safety_check(features: Mapping[str, Any], context: Mapping[str, Any])
         flags.append("haemoptysis")
     if features.get("weightlossoneyear"):
         flags.append("unexplained weight loss")
-    if context.get("abnormal_prior_imaging"):
-        flags.append("abnormal prior imaging")
-    if context.get("abnormal_examination"):
-        flags.append("abnormal respiratory examination")
     if flags:
         st.markdown(
             '<div class="safety"><strong>Clinical warning features recorded</strong><br>'
