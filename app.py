@@ -354,7 +354,7 @@ def collect_assessment() -> Tuple[Dict[str, Any], Dict[str, Any]]:
         persistent_cough = yes_no("Persistent or changing cough", "persistent_cough")
         dyspnoea = yes_no("Breathlessness during the previous year", "dyspnoea")
         haemoptysis = yes_no("Haemoptysis (coughing up blood) during the previous year", "haemoptysis")
-        sputum = yes_no("Persistent or changing sputum symptoms", "sputum")
+        sputum = yes_no("Change in sputum", "sputum")
         weight_loss = yes_no("Unexplained weight loss during the previous year", "weight_loss")
         recurrent_infection = yes_no("Recurrent or persistent chest infection", "recurrent_infection")
 
