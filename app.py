@@ -368,90 +368,90 @@ def collect_assessment() -> Tuple[Dict[str, Any], Dict[str, Any]]:
 )
 
     with st.expander("3 · Lifestyle and respiratory history"):
-    c1, c2 = st.columns(2)
-
-    smoking = c1.selectbox(
-        "Smoking status",
-        ["Never", "Former", "Current", "Unknown"],
-    )
-
-    smoking_duration_years = c1.number_input(
-        "Duration of smoking (years)",
-        min_value=0,
-        max_value=90,
-        value=0,
-        step=1,
-        help=(
-            "Total number of years during which the patient smoked. "
-            "Enter 0 for a never-smoker."
-        ),
-    )
-
-    average_cigarettes_day = c1.number_input(
-        "Average cigarettes smoked per day",
-        min_value=0.0,
-        max_value=100.0,
-        value=0.0,
-        step=1.0,
-        help=(
-            "Average number of cigarettes smoked daily during the "
-            "patient's smoking period."
-        ),
-    )
-
-    years_since_quitting = c1.number_input(
-        "Years since quitting",
-        min_value=0,
-        max_value=90,
-        value=0,
-        step=1,
-        help=(
-            "Complete this field for former smokers. Enter 0 for "
-            "current smokers and never-smokers."
-        ),
-    )
-
-    calculated_pack_years = (
-        average_cigarettes_day / 20.0
-    ) * smoking_duration_years
-
-    c1.metric(
-        "Calculated pack-years",
-        f"{calculated_pack_years:.1f}",
-        help=(
-            "Pack-years = average cigarette packs smoked per day "
-            "multiplied by years of smoking. One pack is treated as "
-            "20 cigarettes."
-        ),
-    )
-
-    alcohol_units_week = c2.number_input(
-        "Alcohol consumption (units per week)",
-        min_value=0.0,
-        max_value=200.0,
-        value=0.0,
-        step=1.0,
-        help=(
-            "One UK alcohol unit equals 10 ml or 8 g of pure alcohol."
-        ),
-    )
-
-    if alcohol_units_week == 0:
-        alcohol_category = "None"
-    elif alcohol_units_week <= 14:
-        alcohol_category = "1–14 units/week"
-    else:
-        alcohol_category = "15 or more units/week"
-
-    c2.caption(
-        f"Alcohol category: **{alcohol_category}**"
-    )
-
-    copd = yes_no(
-        "COPD diagnosis",
-        "copd",
-    )
-        
+        c1, c2 = st.columns(2)
+    
+        smoking = c1.selectbox(
+            "Smoking status",
+            ["Never", "Former", "Current", "Unknown"],
+        )
+    
+        smoking_duration_years = c1.number_input(
+            "Duration of smoking (years)",
+            min_value=0,
+            max_value=90,
+            value=0,
+            step=1,
+            help=(
+                "Total number of years during which the patient smoked. "
+                "Enter 0 for a never-smoker."
+            ),
+        )
+    
+        average_cigarettes_day = c1.number_input(
+            "Average cigarettes smoked per day",
+            min_value=0.0,
+            max_value=100.0,
+            value=0.0,
+            step=1.0,
+            help=(
+                "Average number of cigarettes smoked daily during the "
+                "patient's smoking period."
+            ),
+        )
+    
+        years_since_quitting = c1.number_input(
+            "Years since quitting",
+            min_value=0,
+            max_value=90,
+            value=0,
+            step=1,
+            help=(
+                "Complete this field for former smokers. Enter 0 for "
+                "current smokers and never-smokers."
+            ),
+        )
+    
+        calculated_pack_years = (
+            average_cigarettes_day / 20.0
+        ) * smoking_duration_years
+    
+        c1.metric(
+            "Calculated pack-years",
+            f"{calculated_pack_years:.1f}",
+            help=(
+                "Pack-years = average cigarette packs smoked per day "
+                "multiplied by years of smoking. One pack is treated as "
+                "20 cigarettes."
+            ),
+        )
+    
+        alcohol_units_week = c2.number_input(
+            "Alcohol consumption (units per week)",
+            min_value=0.0,
+            max_value=200.0,
+            value=0.0,
+            step=1.0,
+            help=(
+                "One UK alcohol unit equals 10 ml or 8 g of pure alcohol."
+            ),
+        )
+    
+        if alcohol_units_week == 0:
+            alcohol_category = "None"
+        elif alcohol_units_week <= 14:
+            alcohol_category = "1–14 units/week"
+        else:
+            alcohol_category = "15 or more units/week"
+    
+        c2.caption(
+            f"Alcohol category: **{alcohol_category}**"
+        )
+    
+        copd = yes_no(
+            "COPD diagnosis",
+            "copd",
+        )
+            
 
     with st.expander("4 · Personal and family medical history"):
         c1, c2 = st.columns(2)
