@@ -464,73 +464,62 @@ def collect_assessment() -> Tuple[Dict[str, Any], Dict[str, Any]]:
         other_history = c2.text_area("Other relevant history", placeholder="Optional clinical context")
 
     with st.expander("5 · Functional status and additional information"):
-    performance = st.selectbox(
-        "ECOG performance status",
-        [
-            "Not recorded",
-            "0 — Fully active; no restriction",
-            "1 — Restricted in strenuous activity but ambulatory",
-            "2 — Ambulatory and capable of self-care; unable to work",
-            "3 — Limited self-care; in bed or chair for more than 50% of the day",
-            "4 — Completely disabled; totally confined to bed or chair",
-        ],
-        help=(
-            "Select the category that best represents the patient's "
-            "functional status at the time of assessment."
-        ),
-    )
-
-    clinical_notes = st.text_area(
-        "Additional clinical notes",
-        placeholder="Do not include direct patient identifiers",
-    )
-
-    features: Dict[str, Any] = {
-        "age": age,
-        "gender_1": sex == "Male",
-        "smk_qt_final_2_2": smoking,
-        "alc_units_day_7": alcohol_units_week,
-        "bmifinal2": bmi if bmi_known else 25.0,
-        "famhlg_1": family_lung or family_cancer,
-        "familyhcancer_1": family_cancer,
-        "thyroid_ca_1": "Thyroid" in previous_cancer,
-        "stomach_ca_1": "Stomach" in previous_cancer,
-        "kidney_ca_1": "Kidney" in previous_cancer,
-        "copd_com": copd,
-        "ovary_ca_1": "Ovarian" in previous_cancer,
-        "lek_1": "Leukaemia" in previous_cancer,
-        "myeloma_1": "Myeloma" in previous_cancer,
-        "melanoma_1": "Melanoma" in previous_cancer,
-        "hdnk_ca_1": "Head/neck" in previous_cancer,
-        "bladder_ca_1": "Bladder" in previous_cancer,
-        "pancreas_1": "Pancreatic" in previous_cancer,
-        "dyspnoeaoneyear": dyspnoea,
-        "haemoptysisoneyear": haemoptysis,
-        "sputumoneyear": sputum,
-        "weightlossoneyear": weight_loss,
-        "persistent_cough": persistent_cough,
-    }
-    context = {
-        "main_complaint": complaint,
-        "duration": duration,
-        "smoking_duration_years": smoking_duration_years,
-        "average_cigarettes_per_day": average_cigarettes_day,
-        "years_since_quitting": (
-            years_since_quitting
-            if smoking == "Former"
-            else 0
-        ),
-        "calculated_pack_years": calculated_pack_years,
-        "alcohol_units_per_week": alcohol_units_week,
-        "alcohol_category": alcohol_category,
-        "recurrent_infection": recurrent_infection,
-        "other_history": other_history,
-        "abnormal_examination": abnormal_exam,
-        "abnormal_prior_imaging": concerning_imaging,
-        "functional_status": performance,
-        "consultation_notes": clinical_notes,
-        "bmi_was_imputed": not bmi_known,
-    }
+        performance = st.selectbox("ECOG performance status",[
+                "Not recorded","0 — Fully active; no restriction","1 — Restricted in strenuous activity but ambulatory","2 — Ambulatory and capable of self-care; unable to work",
+                "3 — Limited self-care; in bed or chair for more than 50% of the day","4 — Completely disabled; totally confined to bed or chair",],
+            help=("Select the category that best represents the patient's " "functional status at the time of assessment."), )
+    
+        clinical_notes = st.text_area(
+            "Additional clinical notes",
+            placeholder="Do not include direct patient identifiers",
+        )
+    
+        features: Dict[str, Any] = {
+            "age": age,
+            "gender_1": sex == "Male",
+            "smk_qt_final_2_2": smoking,
+            "alc_units_day_7": alcohol_units_week,
+            "bmifinal2": bmi if bmi_known else 25.0,
+            "famhlg_1": family_lung or family_cancer,
+            "familyhcancer_1": family_cancer,
+            "thyroid_ca_1": "Thyroid" in previous_cancer,
+            "stomach_ca_1": "Stomach" in previous_cancer,
+            "kidney_ca_1": "Kidney" in previous_cancer,
+            "copd_com": copd,
+            "ovary_ca_1": "Ovarian" in previous_cancer,
+            "lek_1": "Leukaemia" in previous_cancer,
+            "myeloma_1": "Myeloma" in previous_cancer,
+            "melanoma_1": "Melanoma" in previous_cancer,
+            "hdnk_ca_1": "Head/neck" in previous_cancer,
+            "bladder_ca_1": "Bladder" in previous_cancer,
+            "pancreas_1": "Pancreatic" in previous_cancer,
+            "dyspnoeaoneyear": dyspnoea,
+            "haemoptysisoneyear": haemoptysis,
+            "sputumoneyear": sputum,
+            "weightlossoneyear": weight_loss,
+            "persistent_cough": persistent_cough,
+        }
+        context = {
+            "main_complaint": complaint,
+            "duration": duration,
+            "smoking_duration_years": smoking_duration_years,
+            "average_cigarettes_per_day": average_cigarettes_day,
+            "years_since_quitting": (
+                years_since_quitting
+                if smoking == "Former"
+                else 0
+            ),
+            "calculated_pack_years": calculated_pack_years,
+            "alcohol_units_per_week": alcohol_units_week,
+            "alcohol_category": alcohol_category,
+            "recurrent_infection": recurrent_infection,
+            "other_history": other_history,
+            "abnormal_examination": abnormal_exam,
+            "abnormal_prior_imaging": concerning_imaging,
+            "functional_status": performance,
+            "consultation_notes": clinical_notes,
+            "bmi_was_imputed": not bmi_known,
+        }
     return features, context
 
 
