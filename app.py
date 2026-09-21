@@ -249,86 +249,86 @@ class CPRDVARHAModelAdapter:
             checkpoint.get("age_scale", 10.0)
         )
 
+                # -----------------------------------------------
+        # Load the fitted probability calibrator
         # -----------------------------------------------
-# Load the fitted probability calibrator
-# -----------------------------------------------
-if not self.calibrator_path.exists():
-    raise FileNotFoundError(
-        "The CPRD–VARHA probability calibrator was "
-        "not found at: "
-        f"{self.calibrator_path}"
-    )
-
-self.calibrator = joblib.load(
-    self.calibrator_path
-)
-
-if not hasattr(self.calibrator, "predict_proba"):
-    raise TypeError(
-        "The loaded calibrator does not provide "
-        "a predict_proba() method."
-    )
-
-# -----------------------------------------------
-# Load calibration metadata
-# -----------------------------------------------
-if not self.calibration_metadata_path.exists():
-    raise FileNotFoundError(
-        "The calibration metadata file was not "
-        "found at: "
-        f"{self.calibration_metadata_path}"
-    )
-
-with self.calibration_metadata_path.open(
-    "r",
-    encoding="utf-8",
-) as metadata_file:
-    self.calibration_metadata = json.load(
-        metadata_file
-    )
-
-required_calibration_fields = [
-    "calibration_method",
-    "calibration_input",
-    "calibration_population",
-    "outcome_definition",
-    "prediction_horizon_months",
-    "calibrated_threshold",
-]
-
-missing_calibration_fields = [
-    field_name
-    for field_name in required_calibration_fields
-    if field_name not in self.calibration_metadata
-]
-
-if missing_calibration_fields:
-    raise KeyError(
-        "Calibration metadata is missing: "
-        + ", ".join(missing_calibration_fields)
-    )
-
-if (
-    self.calibration_metadata["calibration_input"]
-    != "raw_logit"
-):
-    raise ValueError(
-        "This application expects a calibrator fitted "
-        "using raw model logits."
-    )
-
-self.threshold = float(
-    self.calibration_metadata[
-        "calibrated_threshold"
-    ]
-)
-
-if not 0.0 <= self.threshold <= 1.0:
-    raise ValueError(
-        "The calibrated threshold must be between "
-        "0 and 1."
-    )
-
+        if not self.calibrator_path.exists():
+            raise FileNotFoundError(
+                "The CPRD–VARHA probability calibrator was "
+                "not found at: "
+                f"{self.calibrator_path}"
+            )
+        
+        self.calibrator = joblib.load(
+            self.calibrator_path
+        )
+        
+        if not hasattr(self.calibrator, "predict_proba"):
+            raise TypeError(
+                "The loaded calibrator does not provide "
+                "a predict_proba() method."
+            )
+        
+        # -----------------------------------------------
+        # Load calibration metadata
+        # -----------------------------------------------
+        if not self.calibration_metadata_path.exists():
+            raise FileNotFoundError(
+                "The calibration metadata file was not "
+                "found at: "
+                f"{self.calibration_metadata_path}"
+            )
+        
+        with self.calibration_metadata_path.open(
+            "r",
+            encoding="utf-8",
+        ) as metadata_file:
+            self.calibration_metadata = json.load(
+                metadata_file
+            )
+        
+        required_calibration_fields = [
+            "calibration_method",
+            "calibration_input",
+            "calibration_population",
+            "outcome_definition",
+            "prediction_horizon_months",
+            "calibrated_threshold",
+        ]
+        
+        missing_calibration_fields = [
+            field_name
+            for field_name in required_calibration_fields
+            if field_name not in self.calibration_metadata
+        ]
+        
+        if missing_calibration_fields:
+            raise KeyError(
+                "Calibration metadata is missing: "
+                + ", ".join(missing_calibration_fields)
+            )
+        
+        if (
+            self.calibration_metadata["calibration_input"]
+            != "raw_logit"
+        ):
+            raise ValueError(
+                "This application expects a calibrator fitted "
+                "using raw model logits."
+            )
+        
+        self.threshold = float(
+            self.calibration_metadata[
+                "calibrated_threshold"
+            ]
+        )
+        
+        if not 0.0 <= self.threshold <= 1.0:
+            raise ValueError(
+                "The calibrated threshold must be between "
+                "0 and 1."
+            )
+        
 
 
         # -----------------------------------------------
