@@ -158,6 +158,340 @@ class HarmonisedMLP(nn.Module):
     ) -> torch.Tensor:
         return self.net(x).squeeze(1)
 
+class CPRDVARHAModelAdapter:
+    """
+    Inference adapter for the adaptive CPRD–VARHA
+    federated model.
+    """
+
+    REQUIRED_FEATURES = [
+        "age",
+        "copd_emphysema",
+        "ckd",
+        "cerebrovascular",
+        "cardiovascular",
+        "liver",
+    ]
+
+    def __init__(
+        self,
+        spec: ModelSpec,
+        checkpoint_path: Path,
+    ):
+        self.spec = spec
+        self.checkpoint_path = Path(checkpoint_path)
+
+        # -----------------------------------------------
+        # Confirm that the checkpoint exists
+        # -----------------------------------------------
+        if not self.checkpoint_path.exists():
+            raise FileNotFoundError(
+                "CPRD–VARHA checkpoint was not found at: "
+                f"{self.checkpoint_path}"
+            )
+
+        # -----------------------------------------------
+        # Load the checkpoint on CPU
+        # -----------------------------------------------
+        checkpoint = torch.load(
+            self.checkpoint_path,
+            map_location="cpu",
+            weights_only=False,
+        )
+
+        if not isinstance(checkpoint, dict):
+            raise TypeError(
+                "The CPRD–VARHA checkpoint should contain "
+                "a dictionary, but a different object was found."
+            )
+
+        if "model_state_dict" not in checkpoint:
+            raise KeyError(
+                "The CPRD–VARHA checkpoint does not contain "
+                "'model_state_dict'."
+            )
+
+        # -----------------------------------------------
+        # Verify feature names and order
+        # -----------------------------------------------
+        checkpoint_features = checkpoint.get("features")
+
+        if checkpoint_features != self.REQUIRED_FEATURES:
+            raise ValueError(
+                "The checkpoint feature schema does not match "
+                "the expected CPRD–VARHA schema. "
+                f"Checkpoint features: {checkpoint_features}. "
+                f"Expected features: {self.REQUIRED_FEATURES}."
+            )
+
+        # -----------------------------------------------
+        # Retrieve preprocessing information
+        # -----------------------------------------------
+        self.age_center = float(
+            checkpoint.get("age_center", 65.0)
+        )
+
+        self.age_scale = float(
+            checkpoint.get("age_scale", 10.0)
+        )
+
+        # This is a GP/CPRD-facing application.
+        # Therefore, use the threshold selected using
+        # the CPRD validation data.
+        if "CPRD_validation_threshold" not in checkpoint:
+            raise KeyError(
+                "The checkpoint does not contain "
+                "'CPRD_validation_threshold'."
+            )
+
+        self.threshold = float(
+            checkpoint["CPRD_validation_threshold"]
+        )
+
+        # -----------------------------------------------
+        # Reconstruct and load the neural network
+        # -----------------------------------------------
+        self.model = HarmonisedMLP()
+
+        self.model.load_state_dict(
+            checkpoint["model_state_dict"]
+        )
+
+        self.model.to("cpu")
+        self.model.eval()
+
+        # Retain deployment metadata
+        self.metadata = {
+            "features": checkpoint_features,
+            "target": checkpoint.get("target"),
+            "architecture": checkpoint.get(
+                "architecture"
+            ),
+            "aggregation": checkpoint.get(
+                "aggregation"
+            ),
+            "best_global_round": checkpoint.get(
+                "best_global_round"
+            ),
+            "best_validation_mean_AUROC": checkpoint.get(
+                "best_validation_mean_AUROC"
+            ),
+            "CPRD_validation_threshold": self.threshold,
+            "VARHA_validation_threshold": checkpoint.get(
+                "VARHA_validation_threshold"
+            ),
+            "age_center": self.age_center,
+            "age_scale": self.age_scale,
+        }
+
+    @staticmethod
+    def _binary_value(
+        value: Any,
+    ) -> Tuple[float, bool]:
+        """
+        Convert a clinical value to the binary representation
+        used during training.
+
+        Returns:
+            transformed value,
+            whether missing-value handling was applied.
+        """
+
+        if value is None:
+            return 0.0, True
+
+        if isinstance(value, str):
+            normalised = value.strip().lower()
+
+            if normalised in {
+                "yes",
+                "true",
+                "1",
+                "1.0",
+            }:
+                return 1.0, False
+
+            if normalised in {
+                "no",
+                "false",
+                "0",
+                "0.0",
+            }:
+                return 0.0, False
+
+            return 0.0, True
+
+        try:
+            numeric_value = float(value)
+
+            if not np.isfinite(numeric_value):
+                return 0.0, True
+
+            if numeric_value > 0:
+                return 1.0, False
+
+            return 0.0, False
+
+        except (TypeError, ValueError):
+            return 0.0, True
+
+    def _prepare_input(
+        self,
+        patient_record: Mapping[str, Any],
+    ) -> Tuple[torch.Tensor, List[str], float]:
+        """
+        Apply the exact preprocessing used in the training
+        script and construct a 1 x 6 tensor.
+        """
+
+        imputed_features: List[str] = []
+
+        # -----------------------------------------------
+        # Age transformation
+        # -----------------------------------------------
+        raw_age = patient_record.get("age")
+
+        try:
+            age = float(raw_age)
+
+            if not np.isfinite(age):
+                raise ValueError
+
+        except (TypeError, ValueError):
+            age = self.age_center
+            imputed_features.append("age")
+
+        age = float(
+            np.clip(
+                age,
+                18.0,
+                110.0,
+            )
+        )
+
+        transformed_age = (
+            age - self.age_center
+        ) / self.age_scale
+
+        transformed_values = [
+            transformed_age
+        ]
+
+        # -----------------------------------------------
+        # Binary comorbidities
+        # -----------------------------------------------
+        for feature_name in self.REQUIRED_FEATURES[1:]:
+            value, was_imputed = self._binary_value(
+                patient_record.get(feature_name)
+            )
+
+            transformed_values.append(value)
+
+            if was_imputed:
+                imputed_features.append(
+                    feature_name
+                )
+
+        # -----------------------------------------------
+        # Calculate model-input coverage
+        # -----------------------------------------------
+        observed_count = (
+            len(self.REQUIRED_FEATURES)
+            - len(imputed_features)
+        )
+
+        coverage = (
+            observed_count
+            / len(self.REQUIRED_FEATURES)
+        )
+
+        tensor = torch.tensor(
+            [transformed_values],
+            dtype=torch.float32,
+        )
+
+        return (
+            tensor,
+            imputed_features,
+            coverage,
+        )
+
+    def predict(
+        self,
+        features: Mapping[str, Any],
+    ) -> Prediction:
+        """
+        Generate the CPRD–VARHA model score for one patient.
+        """
+
+        (
+            tensor,
+            imputed_features,
+            coverage,
+        ) = self._prepare_input(features)
+
+        # -----------------------------------------------
+        # Model inference
+        # -----------------------------------------------
+        with torch.inference_mode():
+            logit = self.model(tensor)
+
+            score = torch.sigmoid(
+                logit
+            )[0].item()
+
+        # -----------------------------------------------
+        # Classification using the CPRD validation threshold
+        # -----------------------------------------------
+        if score >= self.threshold:
+            category = (
+                "Elevated model score at the time "
+                "of assessment"
+            )
+        else:
+            category = (
+                "Lower model score at the time "
+                "of assessment"
+            )
+
+        warnings: List[str] = []
+
+        if imputed_features:
+            readable_names = [
+                FEATURE_LABELS.get(
+                    feature_name,
+                    feature_name,
+                )
+                for feature_name in imputed_features
+            ]
+
+            warnings.append(
+                "Missing model inputs were handled using "
+                "the preprocessing rule applied during "
+                "training: "
+                + ", ".join(readable_names)
+                + "."
+            )
+
+        warnings.append(
+            "The displayed value is an uncalibrated model "
+            "score, not an absolute clinical probability."
+        )
+
+        return Prediction(
+            model_id=self.spec.model_id,
+            model_name=self.spec.display_name,
+            probability=float(score),
+            threshold=float(self.threshold),
+            category=category,
+            input_coverage=float(coverage),
+            imputed_features=imputed_features,
+            warnings=warnings,
+            contributions=[],
+            placeholder=False,
+        )
+
+
 class PlaceholderRiskModel:
     """Deterministic mock inference adapter. Never use for clinical decisions."""
 
