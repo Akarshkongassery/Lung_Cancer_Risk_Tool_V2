@@ -66,6 +66,24 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
     ),
 }
 
+MODEL_FEATURES: Dict[str, List[str]] = {
+    "cprd": [
+        "age",
+        "copd_emphysema",
+        "ckd",
+        "cerebrovascular",
+        "cardiovascular",
+        "liver",
+    ],
+    "cprd_varha": [
+        "age",
+        "copd_emphysema",
+        "ckd",
+        "cerebrovascular",
+        "cardiovascular",
+        "liver",
+    ],
+}
 
 FEATURE_LABELS = {
     "age": "Age",
@@ -79,6 +97,11 @@ FEATURE_LABELS = {
     "stomach_ca_1": "Previous stomach cancer",
     "kidney_ca_1": "Previous kidney cancer",
     "copd_com": "COPD",
+    "copd_emphysema": "COPD or emphysema",
+"ckd": "Chronic kidney disease",
+"cerebrovascular": "Cerebrovascular disease",
+"cardiovascular": ("Ischaemic heart disease or previous myocardial infarction"),
+"liver": "Liver disease",
     "ovary_ca_1": "Previous ovarian cancer",
     "lek_1": "Previous leukaemia",
     "myeloma_1": "Previous myeloma",
