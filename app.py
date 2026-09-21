@@ -131,7 +131,32 @@ class Prediction:
     warnings: List[str]
     contributions: List[Tuple[str, float]]
     placeholder: bool = True
+    
+class HarmonisedMLP(nn.Module):
+    """Exact MLP used by the CPRD–VARHA experiment."""
 
+    def __init__(self):
+        super().__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(6, 64),
+            nn.LayerNorm(64),
+            nn.GELU(),
+            nn.Dropout(0.20),
+
+            nn.Linear(64, 32),
+            nn.LayerNorm(32),
+            nn.GELU(),
+            nn.Dropout(0.20),
+
+            nn.Linear(32, 1),
+        )
+
+    def forward(
+        self,
+        x: torch.Tensor,
+    ) -> torch.Tensor:
+        return self.net(x).squeeze(1)
 
 class PlaceholderRiskModel:
     """Deterministic mock inference adapter. Never use for clinical decisions."""
