@@ -529,79 +529,79 @@ class CPRDVARHAModelAdapter:
         ) = self._prepare_input(features)
 
         # -----------------------------------------------
-    # Frozen-model inference
-    # -----------------------------------------------
-    with torch.inference_mode():
-        raw_logit = float(
-            self.model(tensor)[0].item()
-        )
-    
-    # Keep the raw sigmoid score internally.
-    # It is not shown as a cancer probability.
-    raw_score = float(
-        torch.sigmoid(
-            torch.tensor(raw_logit)
-        ).item()
-    )
-
-    # -----------------------------------------------
-    # Convert the raw logit to calibrated cancer risk
-    # -----------------------------------------------
-    calibrated_risk = float(
-        self.calibrator.predict_proba(
-            np.asarray(
-                [[raw_logit]],
-                dtype=np.float64,
+        # Frozen-model inference
+        # -----------------------------------------------
+        with torch.inference_mode():
+            raw_logit = float(
+                self.model(tensor)[0].item()
             )
-        )[0, 1]
-    )
-    
-    if not np.isfinite(calibrated_risk):
-        raise ValueError(
-            "The calibrator returned a non-finite value."
+        
+        # Keep the raw sigmoid score internally.
+        # It is not shown as a cancer probability.
+        raw_score = float(
+            torch.sigmoid(
+                torch.tensor(raw_logit)
+            ).item()
         )
     
-    if not 0.0 <= calibrated_risk <= 1.0:
-        raise ValueError(
-            "The calibrated probability is outside "
-            "the interval [0, 1]."
-        )
-    
-    # -----------------------------------------------
-    # Apply the calibrated operating threshold
-    # -----------------------------------------------
-    if calibrated_risk >= self.threshold:
-        category = (
-            "At or above the selected investigation "
-            "threshold"
-        )
-    else:
-        category = (
-            "Below the selected investigation threshold"
-        )
-        warnings: List[str] = []
-
-        if imputed_features:
-            readable_names = [
-                FEATURE_LABELS.get(
-                    feature_name,
-                    feature_name,
+        # -----------------------------------------------
+        # Convert the raw logit to calibrated cancer risk
+        # -----------------------------------------------
+        calibrated_risk = float(
+            self.calibrator.predict_proba(
+                np.asarray(
+                    [[raw_logit]],
+                    dtype=np.float64,
                 )
-                for feature_name in imputed_features
-            ]
-
-            warnings.append(
-                "Missing model inputs were handled using "
-                "the preprocessing rule applied during "
-                "training: "
-                + ", ".join(readable_names)
-                + "."
-            )
-
-        warnings.append(
-            "The displayed value is an uncalibrated model "
-            "score, not an absolute clinical probability."
+            )[0, 1]
         )
+        
+        if not np.isfinite(calibrated_risk):
+            raise ValueError(
+                "The calibrator returned a non-finite value."
+            )
+        
+        if not 0.0 <= calibrated_risk <= 1.0:
+            raise ValueError(
+                "The calibrated probability is outside "
+                "the interval [0, 1]."
+            )
+        
+        # -----------------------------------------------
+        # Apply the calibrated operating threshold
+        # -----------------------------------------------
+        if calibrated_risk >= self.threshold:
+            category = (
+                "At or above the selected investigation "
+                "threshold"
+            )
+        else:
+            category = (
+                "Below the selected investigation threshold"
+            )
+            warnings: List[str] = []
+    
+            if imputed_features:
+                readable_names = [
+                    FEATURE_LABELS.get(
+                        feature_name,
+                        feature_name,
+                    )
+                    for feature_name in imputed_features
+                ]
+    
+                warnings.append(
+                    "Missing model inputs were handled using "
+                    "the preprocessing rule applied during "
+                    "training: "
+                    + ", ".join(readable_names)
+                    + "."
+                )
+    
+            warnings.append(
+                "The displayed value is an uncalibrated model "
+                "score, not an absolute clinical probability."
+            )
 
     return Prediction(
             model_id=self.spec.model_id,
