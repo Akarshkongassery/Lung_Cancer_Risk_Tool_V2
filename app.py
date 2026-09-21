@@ -188,11 +188,11 @@ class CPRDVARHAModelAdapter:
     checkpoint_path: Path,
     calibrator_path: Path,
     calibration_metadata_path: Path,):
-    self.spec = spec
-    self.checkpoint_path = Path(checkpoint_path)
-    self.calibrator_path = Path(calibrator_path)
-    self.calibration_metadata_path = Path(
-        calibration_metadata_path
+        self.spec = spec
+        self.checkpoint_path = Path(checkpoint_path)
+        self.calibrator_path = Path(calibrator_path)
+        self.calibration_metadata_path = Path(
+            calibration_metadata_path
     )
 
         # -----------------------------------------------
