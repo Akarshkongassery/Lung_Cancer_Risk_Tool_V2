@@ -697,6 +697,7 @@ class PlaceholderRiskModel:
 
 
 @st.cache_resource
+
 def load_model_registry() -> Dict[str, Any]:
     app_directory = Path(__file__).resolve().parent
 
@@ -706,26 +707,27 @@ def load_model_registry() -> Dict[str, Any]:
         ),
 
         "cprd_varha": CPRDVARHAModelAdapter(
-    spec=MODEL_SPECS["cprd_varha"],
-    checkpoint_path=(
-        app_directory
-        / "models"
-        / "cprd_varha"
-        / "final_adaptive_CPRD_VARHA_global_model.pt"
-    ),
-    calibrator_path=(
-        app_directory
-        / "models"
-        / "cprd_varha"
-        / "calibrator.joblib"
-    ),
-    calibration_metadata_path=(
-        app_directory
-        / "models"
-        / "cprd_varha"
-        / "calibration_metadata.json"
-    ),
-),
+            spec=MODEL_SPECS["cprd_varha"],
+            checkpoint_path=(
+                app_directory
+                / "models"
+                / "cprd_varha"
+                / "final_adaptive_CPRD_VARHA_global_model.pt"
+            ),
+            calibrator_path=(
+                app_directory
+                / "models"
+                / "cprd_varha"
+                / "calibrator.joblib"
+            ),
+            calibration_metadata_path=(
+                app_directory
+                / "models"
+                / "cprd_varha"
+                / "calibration_metadata.json"
+            ),
+        ),
+    }
 
 
 def inject_css() -> None:
