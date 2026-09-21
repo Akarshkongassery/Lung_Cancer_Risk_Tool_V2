@@ -705,9 +705,19 @@ def render_safety_check(features: Mapping[str, Any], context: Mapping[str, Any])
     return False
 
 
-def run_models(features: Mapping[str, Any], selected_ids: List[str]) -> Dict[str, Prediction]:
-    return {model_id: MODEL_REGISTRY[model_id].predict(features) for model_id in selected_ids}
+# def run_models(features: Mapping[str, Any], selected_ids: List[str]) -> Dict[str, Prediction]:
+#     return {model_id: MODEL_REGISTRY[model_id].predict(features) for model_id in selected_ids}
 
+def run_models(
+    features: Mapping[str, Any],
+    selected_ids: List[str],
+) -> Dict[str, Prediction]:
+    registry = load_model_registry()
+
+    return {
+        model_id: registry[model_id].predict(features)
+        for model_id in selected_ids
+    }
 
 def prediction_card(prediction: Prediction) -> None:
     spec = MODEL_SPECS[prediction.model_id]
