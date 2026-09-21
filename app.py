@@ -706,15 +706,26 @@ def load_model_registry() -> Dict[str, Any]:
         ),
 
         "cprd_varha": CPRDVARHAModelAdapter(
-            spec=MODEL_SPECS["cprd_varha"],
-            checkpoint_path=(
-                app_directory
-                / "models"
-                / "cprd_varha"
-                / "final_adaptive_CPRD_VARHA_global_model.pt"
-            ),
-        ),
-    }
+    spec=MODEL_SPECS["cprd_varha"],
+    checkpoint_path=(
+        app_directory
+        / "models"
+        / "cprd_varha"
+        / "final_adaptive_CPRD_VARHA_global_model.pt"
+    ),
+    calibrator_path=(
+        app_directory
+        / "models"
+        / "cprd_varha"
+        / "calibrator.joblib"
+    ),
+    calibration_metadata_path=(
+        app_directory
+        / "models"
+        / "cprd_varha"
+        / "calibration_metadata.json"
+    ),
+),
 
 
 def inject_css() -> None:
@@ -1200,13 +1211,34 @@ def run_models(
         for model_id in selected_ids
     }
 
-def prediction_card(prediction: Prediction) -> None:
+def prediction_card(
+    prediction: Prediction,
+) -> None:
     spec = MODEL_SPECS[prediction.model_id]
 
     with st.container(border=True):
         st.markdown(
             f"#### {prediction.model_name}"
         )
+
+        if not prediction.calibrated:
+            st.error(
+                "A validated calibrated cancer-risk "
+                "estimate is not available for this model."
+            )
+            return
+
+        if prediction.prediction_horizon_months:
+            st.caption(
+                "Estimated probability of the modelled "
+                "lung-cancer outcome within "
+                f"{prediction.prediction_horizon_months} "
+                "months"
+            )
+        else:
+            st.caption(
+                "Estimated calibrated lung-cancer risk"
+            )
 
         st.markdown(
             f"""
@@ -1218,19 +1250,24 @@ def prediction_card(prediction: Prediction) -> None:
             unsafe_allow_html=True,
         )
 
-        st.write(f"**{prediction.category}**")
+        st.write(
+            f"**{prediction.category}**"
+        )
 
         st.caption(
-            f"Demonstration threshold: "
+            "Selected investigation threshold: "
             f"{prediction.threshold:.1%} · "
-            f"Input coverage: "
+            "Input coverage: "
             f"{prediction.input_coverage:.0%}"
         )
 
         st.progress(
             min(
                 prediction.probability
-                / max(prediction.threshold * 2.0, 0.01),
+                / max(
+                    prediction.threshold * 2.0,
+                    0.01,
+                ),
                 1.0,
             )
         )
