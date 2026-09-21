@@ -215,7 +215,25 @@ class PlaceholderRiskModel:
         )
 
 
-MODEL_REGISTRY = {key: PlaceholderRiskModel(spec) for key, spec in MODEL_SPECS.items()}
+@st.cache_resource
+def load_model_registry() -> Dict[str, Any]:
+    app_directory = Path(__file__).resolve().parent
+
+    return {
+        "cprd": PlaceholderRiskModel(
+            MODEL_SPECS["cprd"]
+        ),
+
+        "cprd_varha": CPRDVARHAModelAdapter(
+            spec=MODEL_SPECS["cprd_varha"],
+            checkpoint_path=(
+                app_directory
+                / "models"
+                / "cprd_varha"
+                / "final_adaptive_CPRD_VARHA_global_model.pt"
+            ),
+        ),
+    }
 
 
 def inject_css() -> None:
