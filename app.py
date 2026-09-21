@@ -46,18 +46,18 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
         model_id="cprd",
         display_name="CPRD standalone model",
         population="CPRD Aurum primary-care cohort",
-        threshold=0.0,  # Replace with validated threshold
+        threshold=0.030,  # Temporary UI threshold
         colour="#007C83",
         description=(
-            "Standalone MLP trained using the harmonised CPRD "
-            "Aurum cohort."
+            "Standalone MLP trained using the harmonised "
+            "CPRD Aurum cohort."
         ),
     ),
     "cprd_varha": ModelSpec(
         model_id="cprd_varha",
         display_name="CPRD + VARHA federated model",
         population="Federated CPRD Aurum and VARHA cohorts",
-        threshold=0.0,  # Replace with validated threshold
+        threshold=0.030,  # Temporary UI threshold
         colour="#3156A3",
         description=(
             "Federated MLP produced using adaptive mean-AUROC "
@@ -460,14 +460,81 @@ def collect_assessment() -> Tuple[Dict[str, Any], Dict[str, Any]]:
             
 
     with st.expander("4 · Personal and family medical history"):
-        c1, c2 = st.columns(2)
-        family_lung = yes_no("Family history of lung cancer", "family_lung")
-        family_cancer = yes_no("Family history of another cancer", "family_cancer")
-        previous_cancer = c1.multiselect(
-            "Previous malignancies",
-            ["Thyroid", "Stomach", "Kidney", "Ovarian", "Leukaemia", "Myeloma", "Melanoma", "Head/neck", "Bladder", "Pancreatic"],
+    st.markdown("##### Conditions used by the CPRD models")
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        ckd = yes_no(
+            "Chronic kidney disease",
+            "ckd",
         )
-        other_history = c2.text_area("Other relevant history", placeholder="Optional clinical context")
+
+        cerebrovascular = yes_no(
+            "Cerebrovascular disease",
+            "cerebrovascular",
+            help_text=(
+                "Select Yes when cerebrovascular disease is "
+                "recorded in the patient's medical history."
+            ),
+        )
+
+    with c2:
+        cardiovascular = yes_no(
+            (
+                "Ischaemic heart disease or previous "
+                "myocardial infarction"
+            ),
+            "cardiovascular",
+            help_text=(
+                "This corresponds to the harmonised "
+                "cardiovascular feature used by the "
+                "CPRD–VARHA model."
+            ),
+        )
+
+        liver_disease = yes_no(
+            "Liver disease",
+            "liver_disease",
+        )
+
+    st.divider()
+    st.markdown("##### Other medical and family history")
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        family_lung = yes_no(
+            "Family history of lung cancer",
+            "family_lung",
+        )
+
+        family_cancer = yes_no(
+            "Family history of another cancer",
+            "family_cancer",
+        )
+
+        previous_cancer = st.multiselect(
+            "Previous malignancies",
+            [
+                "Thyroid",
+                "Stomach",
+                "Kidney",
+                "Ovarian",
+                "Leukaemia",
+                "Myeloma",
+                "Melanoma",
+                "Head/neck",
+                "Bladder",
+                "Pancreatic",
+            ],
+        )
+
+    with c2:
+        other_history = st.text_area(
+            "Other relevant history",
+            placeholder="Optional clinical context",
+        )
 
     with st.expander("5 · Functional status and additional information"):
         performance = st.selectbox("ECOG performance status",[
