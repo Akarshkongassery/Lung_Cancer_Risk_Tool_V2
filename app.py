@@ -529,29 +529,56 @@ class CPRDVARHAModelAdapter:
         ) = self._prepare_input(features)
 
         # -----------------------------------------------
-        # Model inference
-        # -----------------------------------------------
-        with torch.inference_mode():
-            logit = self.model(tensor)
+    # Frozen-model inference
+    # -----------------------------------------------
+    with torch.inference_mode():
+        raw_logit = float(
+            self.model(tensor)[0].item()
+        )
+    
+    # Keep the raw sigmoid score internally.
+    # It is not shown as a cancer probability.
+    raw_score = float(
+        torch.sigmoid(
+            torch.tensor(raw_logit)
+        ).item()
+    )
 
-            score = torch.sigmoid(
-                logit
-            )[0].item()
-
-        # -----------------------------------------------
-        # Classification using the CPRD validation threshold
-        # -----------------------------------------------
-        if score >= self.threshold:
-            category = (
-                "Elevated model score at the time "
-                "of assessment"
+    # -----------------------------------------------
+    # Convert the raw logit to calibrated cancer risk
+    # -----------------------------------------------
+    calibrated_risk = float(
+        self.calibrator.predict_proba(
+            np.asarray(
+                [[raw_logit]],
+                dtype=np.float64,
             )
-        else:
-            category = (
-                "Lower model score at the time "
-                "of assessment"
-            )
-
+        )[0, 1]
+    )
+    
+    if not np.isfinite(calibrated_risk):
+        raise ValueError(
+            "The calibrator returned a non-finite value."
+        )
+    
+    if not 0.0 <= calibrated_risk <= 1.0:
+        raise ValueError(
+            "The calibrated probability is outside "
+            "the interval [0, 1]."
+        )
+    
+    # -----------------------------------------------
+    # Apply the calibrated operating threshold
+    # -----------------------------------------------
+    if calibrated_risk >= self.threshold:
+        category = (
+            "At or above the selected investigation "
+            "threshold"
+        )
+    else:
+        category = (
+            "Below the selected investigation threshold"
+        )
         warnings: List[str] = []
 
         if imputed_features:
