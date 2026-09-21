@@ -599,21 +599,44 @@ class CPRDVARHAModelAdapter:
                 )
     
             warnings.append(
-                "The displayed value is an uncalibrated model "
-                "score, not an absolute clinical probability."
-            )
+    "This estimated probability supports clinical "
+    "assessment and does not rule lung cancer in "
+    "or out."
+)
 
             return Prediction(
-            model_id=self.spec.model_id,
-            model_name=self.spec.display_name,
-            probability=float(score),
-            threshold=float(self.threshold),
-            category=category,
-            input_coverage=float(coverage),
-            imputed_features=imputed_features,
-            warnings=warnings,
-            contributions=[],
-            placeholder=False,)
+    model_id=self.spec.model_id,
+    model_name=self.spec.display_name,
+
+    # This is now the calibrated probability.
+    probability=calibrated_risk,
+
+    # This is now the calibrated threshold.
+    threshold=self.threshold,
+
+    category=category,
+    input_coverage=float(coverage),
+    imputed_features=imputed_features,
+    warnings=warnings,
+    contributions=[],
+
+    # Retained internally, not displayed prominently.
+    raw_score=raw_score,
+
+    calibration_method=self.calibration_metadata[
+        "calibration_method"
+    ],
+    calibration_population=self.calibration_metadata[
+        "calibration_population"
+    ],
+    prediction_horizon_months=int(
+        self.calibration_metadata[
+            "prediction_horizon_months"
+        ]
+    ),
+    calibrated=True,
+    placeholder=False,
+)
 
 
 class PlaceholderRiskModel:
