@@ -863,9 +863,9 @@ def collect_assessment() -> Tuple[Dict[str, Any], Dict[str, Any]]:
             
 
     with st.expander("4 · Personal and family medical history"):
-    st.markdown("##### Conditions used by the CPRD models")
-
-    c1, c2 = st.columns(2)
+        st.markdown("##### Conditions used by the CPRD models")
+    
+        c1, c2 = st.columns(2)
 
     with c1:
         ckd = yes_no(
