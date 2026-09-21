@@ -1,4 +1,6 @@
 streamlit
 numpy
+pandas
 torch
 joblib
+scikit-learn
