@@ -249,18 +249,7 @@ class CPRDVARHAModelAdapter:
             checkpoint.get("age_scale", 10.0)
         )
 
-        # This is a GP/CPRD-facing application.
-        # Therefore, use the threshold selected using
-        # the CPRD validation data.
-        if "CPRD_validation_threshold" not in checkpoint:
-            raise KeyError(
-                "The checkpoint does not contain "
-                "'CPRD_validation_threshold'."
-            )
 
-        self.threshold = float(
-            checkpoint["CPRD_validation_threshold"]
-        )
 
         # -----------------------------------------------
         # Reconstruct and load the neural network
