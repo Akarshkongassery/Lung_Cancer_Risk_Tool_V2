@@ -603,7 +603,7 @@ class CPRDVARHAModelAdapter:
                 "score, not an absolute clinical probability."
             )
 
-    return Prediction(
+            return Prediction(
             model_id=self.spec.model_id,
             model_name=self.spec.display_name,
             probability=float(score),
@@ -613,8 +613,7 @@ class CPRDVARHAModelAdapter:
             imputed_features=imputed_features,
             warnings=warnings,
             contributions=[],
-            placeholder=False,
-        )
+            placeholder=False,)
 
 
 class PlaceholderRiskModel:
