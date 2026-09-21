@@ -183,12 +183,17 @@ class CPRDVARHAModelAdapter:
     ]
 
     def __init__(
-        self,
-        spec: ModelSpec,
-        checkpoint_path: Path,
-    ):
-        self.spec = spec
-        self.checkpoint_path = Path(checkpoint_path)
+    self,
+    spec: ModelSpec,
+    checkpoint_path: Path,
+    calibrator_path: Path,
+    calibration_metadata_path: Path,):
+    self.spec = spec
+    self.checkpoint_path = Path(checkpoint_path)
+    self.calibrator_path = Path(calibrator_path)
+    self.calibration_metadata_path = Path(
+        calibration_metadata_path
+    )
 
         # -----------------------------------------------
         # Confirm that the checkpoint exists
