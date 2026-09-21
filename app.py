@@ -359,7 +359,22 @@ class CPRDVARHAModelAdapter:
             "best_validation_mean_AUROC": checkpoint.get(
                 "best_validation_mean_AUROC"
             ),
-            "CPRD_validation_threshold": self.threshold,
+            "raw_CPRD_validation_threshold": checkpoint.get(
+            "CPRD_validation_threshold"
+        ),
+        "calibrated_threshold": self.threshold,
+        "calibration_method": self.calibration_metadata[
+            "calibration_method"
+        ],
+        "calibration_population": self.calibration_metadata[
+            "calibration_population"
+        ],
+        "outcome_definition": self.calibration_metadata[
+            "outcome_definition"
+        ],
+        "prediction_horizon_months": self.calibration_metadata[
+            "prediction_horizon_months"
+        ],
             "VARHA_validation_threshold": checkpoint.get(
                 "VARHA_validation_threshold"
             ),
