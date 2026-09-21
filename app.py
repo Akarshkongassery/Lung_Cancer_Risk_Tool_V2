@@ -25,6 +25,7 @@ import joblib
 import numpy as np
 import streamlit as st
 import torch
+import scikit-learn
 from torch import nn
 
 
@@ -133,6 +134,12 @@ class Prediction:
     imputed_features: List[str]
     warnings: List[str]
     contributions: List[Tuple[str, float]]
+
+    raw_score: Optional[float] = None
+    calibration_method: Optional[str] = None
+    calibration_population: Optional[str] = None
+    prediction_horizon_months: Optional[int] = None
+    calibrated: bool = False
     placeholder: bool = True
     
 class HarmonisedMLP(nn.Module):
