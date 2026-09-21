@@ -63,9 +63,11 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
         threshold=0.030,  # Temporary UI threshold
         colour="#3156A3",
         description=(
-            "Federated MLP produced using adaptive mean-AUROC "
-            "aggregation across CPRD Aurum and VARHA."
-        ),
+    "Federated MLP trained across harmonised CPRD Aurum "
+    "and VARHA cohorts using client-specific adaptive local "
+    "training and equal server aggregation. The final model "
+    "was selected using mean validation AUROC."
+),
     ),
 }
 
