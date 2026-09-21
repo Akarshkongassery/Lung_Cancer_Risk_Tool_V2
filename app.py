@@ -43,20 +43,26 @@ class ModelSpec:
 
 MODEL_SPECS: Dict[str, ModelSpec] = {
     "cprd": ModelSpec(
-        "cprd", "CPRD Aurum", "UK primary-care records", 0.030, "#007C83",
-        "Primary-care model slot. Replace with the validated CPRD pipeline.",
+        model_id="cprd",
+        display_name="CPRD standalone model",
+        population="CPRD Aurum primary-care cohort",
+        threshold=0.0,  # Replace with validated threshold
+        colour="#007C83",
+        description=(
+            "Standalone MLP trained using the harmonised CPRD "
+            "Aurum cohort."
+        ),
     ),
-    "synpre": ModelSpec(
-        "synpre", "SynPre-FL", "Federated multi-cohort research population", 0.030,
-        "#3156A3", "Proposed synthetic-pretraining plus federated-learning model slot.",
-    ),
-    "mimic": ModelSpec(
-        "mimic", "MIMIC", "Hospital/critical-care cohort", 0.030, "#7656A6",
-        "Hospital-cohort comparator; not assumed to be validated for primary care.",
-    ),
-    "eicu": ModelSpec(
-        "eicu", "eICU", "Intensive-care cohort", 0.030, "#B06820",
-        "Critical-care comparator; substantial population mismatch may apply.",
+    "cprd_varha": ModelSpec(
+        model_id="cprd_varha",
+        display_name="CPRD + VARHA federated model",
+        population="Federated CPRD Aurum and VARHA cohorts",
+        threshold=0.0,  # Replace with validated threshold
+        colour="#3156A3",
+        description=(
+            "Federated MLP produced using adaptive mean-AUROC "
+            "aggregation across CPRD Aurum and VARHA."
+        ),
     ),
 }
 
