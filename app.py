@@ -1021,9 +1021,8 @@ class PlaceholderRiskModel:
 
 def load_model_registry() -> Dict[str, Any]:
     app_directory = Path(__file__).resolve().parent
-        cprd_test_adapter = CPRDStandaloneModelAdapter(
-        spec=MODEL_SPECS["cprd"],
-        checkpoint_path=(
+        
+    cprd_test_adapter = CPRDStandaloneModelAdapter(spec=MODEL_SPECS["cprd"],checkpoint_path=(
             app_directory
             / "models"
             / "cprd"
