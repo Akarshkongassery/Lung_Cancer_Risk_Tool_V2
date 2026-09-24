@@ -2017,7 +2017,6 @@ def sidebar() -> Tuple[str, List[str]]:
             )
         st.divider()
         st.caption(f"{APP_VERSION}")
-        #st.warning("Research prototype. Placeholder model active.")
     return mode, selected
 
 
