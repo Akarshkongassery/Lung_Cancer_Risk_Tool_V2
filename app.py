@@ -161,7 +161,307 @@ class CPRDStandaloneMLP(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x).squeeze(1)
 
+class CPRDStandaloneModelAdapter:
+    """Inference adapter for the standalone CPRD model."""
 
+    REQUIRED_FEATURES = [
+        "gender",
+        "age_at_incidence",
+        "cerebrovascular_disease",
+        "chronic_kidney_disease",
+        "copd_emphysema",
+        "ischemic_heart_myocardial_infarction",
+        "peripheral_vascular",
+        "bowel_cancer",
+        "osteoarthritis",
+        "rheumatoid_arthritis",
+        "liver_disease",
+        "smoking_status_N",
+        "smoking_status_U",
+        "smoking_status_X",
+        "smoking_status_Y",
+        "comorbidity_count",
+        "cardio_risk",
+        "any_comorbidity",
+    ]
+
+    def __init__(
+        self,
+        spec: ModelSpec,
+        checkpoint_path: Path,
+    ):
+        self.spec = spec
+        self.checkpoint_path = Path(checkpoint_path)
+
+        if not self.checkpoint_path.exists():
+            raise FileNotFoundError(
+                "Standalone CPRD checkpoint was not found at: "
+                f"{self.checkpoint_path}"
+            )
+
+        checkpoint = torch.load(
+            self.checkpoint_path,
+            map_location="cpu",
+            weights_only=False,
+        )
+
+        if not isinstance(checkpoint, dict):
+            raise TypeError(
+                "The standalone CPRD checkpoint must contain "
+                "a dictionary."
+            )
+
+        if "model_state_dict" not in checkpoint:
+            raise KeyError(
+                "The standalone CPRD checkpoint does not contain "
+                "'model_state_dict'."
+            )
+
+        checkpoint_features = checkpoint.get("features")
+
+        if checkpoint_features != self.REQUIRED_FEATURES:
+            raise ValueError(
+                "The standalone CPRD checkpoint feature order "
+                "does not match the expected feature order. "
+                f"Checkpoint: {checkpoint_features}. "
+                f"Expected: {self.REQUIRED_FEATURES}."
+            )
+
+        self.age_mean = float(
+            checkpoint["age_scaler_mean"]
+        )
+
+        self.age_scale = float(
+            checkpoint["age_scaler_scale"]
+        )
+
+        if self.age_scale <= 0:
+            raise ValueError(
+                "The CPRD age-scaler scale must be greater than zero."
+            )
+
+        self.model = CPRDStandaloneMLP()
+
+        self.model.load_state_dict(
+            checkpoint["model_state_dict"]
+        )
+
+        self.model.to("cpu")
+        self.model.eval()
+
+        self.metadata = {
+            "features": checkpoint_features,
+            "architecture": checkpoint.get("architecture"),
+            "best_epoch": checkpoint.get("best_epoch"),
+            "age_scaler_mean": self.age_mean,
+            "age_scaler_scale": self.age_scale,
+        }
+
+    @staticmethod
+    def _binary_value(value: Any) -> Tuple[float, bool]:
+        """Convert a UI value into zero or one."""
+
+        if value is None:
+            return 0.0, True
+
+        if isinstance(value, str):
+            normalised = value.strip().lower()
+
+            if normalised in {"yes", "true", "1", "1.0"}:
+                return 1.0, False
+
+            if normalised in {"no", "false", "0", "0.0"}:
+                return 0.0, False
+
+            return 0.0, True
+
+        try:
+            numeric_value = float(value)
+
+            if not np.isfinite(numeric_value):
+                return 0.0, True
+
+            return (1.0 if numeric_value > 0 else 0.0), False
+
+        except (TypeError, ValueError):
+            return 0.0, True
+
+    def _prepare_input(
+        self,
+        patient_record: Mapping[str, Any],
+    ) -> Tuple[torch.Tensor, List[str], float]:
+        """
+        Reproduce the preprocessing used when the standalone
+        CPRD model was trained.
+        """
+
+        imputed_features: List[str] = []
+
+        # Age
+        raw_age = patient_record.get("age")
+
+        try:
+            age = float(raw_age)
+
+            if not np.isfinite(age):
+                raise ValueError
+
+        except (TypeError, ValueError):
+            age = self.age_mean
+            imputed_features.append("age")
+
+        age = float(np.clip(age, 18.0, 110.0))
+        scaled_age = (age - self.age_mean) / self.age_scale
+
+        # CPRD variables that genuinely varied during training
+        source_features = {
+            "cerebrovascular_disease": "cerebrovascular",
+            "chronic_kidney_disease": "ckd",
+            "copd_emphysema": "copd_emphysema",
+            "ischemic_heart_myocardial_infarction": "cardiovascular",
+            "liver_disease": "liver",
+        }
+
+        binary_values: Dict[str, float] = {}
+
+        for model_feature, ui_feature in source_features.items():
+            value, was_imputed = self._binary_value(
+                patient_record.get(ui_feature)
+            )
+
+            binary_values[model_feature] = value
+
+            if was_imputed:
+                imputed_features.append(ui_feature)
+
+        cerebrovascular = binary_values[
+            "cerebrovascular_disease"
+        ]
+        chronic_kidney = binary_values[
+            "chronic_kidney_disease"
+        ]
+        copd = binary_values[
+            "copd_emphysema"
+        ]
+        ischaemic_heart = binary_values[
+            "ischemic_heart_myocardial_infarction"
+        ]
+        liver = binary_values[
+            "liver_disease"
+        ]
+
+        # These were unavailable or disabled in the CPRD
+        # training pipeline and were therefore always zero.
+        gender = 0.0
+        peripheral_vascular = 0.0
+        bowel_cancer = 0.0
+        osteoarthritis = 0.0
+        rheumatoid_arthritis = 0.0
+
+        smoking_n = 0.0
+        smoking_u = 0.0
+        smoking_x = 0.0
+        smoking_y = 0.0
+
+        # Same derived variables used during training
+        comorbidity_count = (
+            cerebrovascular
+            + chronic_kidney
+            + copd
+            + ischaemic_heart
+            + peripheral_vascular
+            + bowel_cancer
+            + osteoarthritis
+            + rheumatoid_arthritis
+            + liver
+        )
+
+        cardio_risk = (
+            cerebrovascular
+            + ischaemic_heart
+            + peripheral_vascular
+        )
+
+        any_comorbidity = (
+            1.0 if comorbidity_count > 0 else 0.0
+        )
+
+        transformed_values = [
+            gender,
+            scaled_age,
+            cerebrovascular,
+            chronic_kidney,
+            copd,
+            ischaemic_heart,
+            peripheral_vascular,
+            bowel_cancer,
+            osteoarthritis,
+            rheumatoid_arthritis,
+            liver,
+            smoking_n,
+            smoking_u,
+            smoking_x,
+            smoking_y,
+            comorbidity_count,
+            cardio_risk,
+            any_comorbidity,
+        ]
+
+        if len(transformed_values) != 18:
+            raise RuntimeError(
+                "The CPRD adapter did not construct exactly "
+                "18 model inputs."
+            )
+
+        tensor = torch.tensor(
+            [transformed_values],
+            dtype=torch.float32,
+        )
+
+        observed_count = 6 - len(
+            set(imputed_features)
+        )
+
+        coverage = max(
+            0.0,
+            min(1.0, observed_count / 6.0),
+        )
+
+        return tensor, imputed_features, coverage
+
+    def predict_raw(
+        self,
+        features: Mapping[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Produce a technical raw prediction.
+
+        This is not yet a calibrated cancer probability and
+        must not be displayed clinically.
+        """
+
+        tensor, imputed_features, coverage = (
+            self._prepare_input(features)
+        )
+
+        with torch.inference_mode():
+            raw_logit = float(
+                self.model(tensor)[0].item()
+            )
+
+        raw_sigmoid_score = float(
+            torch.sigmoid(
+                torch.tensor(raw_logit)
+            ).item()
+        )
+
+        return {
+            "raw_logit": raw_logit,
+            "raw_sigmoid_score": raw_sigmoid_score,
+            "input_coverage": coverage,
+            "imputed_features": imputed_features,
+            "model_input": tensor.tolist()[0],
+        }
 class HarmonisedMLP(nn.Module):
     """Exact MLP used by the CPRD–VARHA experiment."""
 
