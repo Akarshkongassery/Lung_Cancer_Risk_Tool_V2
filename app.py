@@ -186,12 +186,16 @@ class CPRDStandaloneModelAdapter:
     ]
 
     def __init__(
-        self,
-        spec: ModelSpec,
-        checkpoint_path: Path,
-    ):
-        self.spec = spec
-        self.checkpoint_path = Path(checkpoint_path)
+    self,
+    spec: ModelSpec,
+    checkpoint_path: Path,
+    calibrator_path: Path,
+    calibration_metadata_path: Path,):
+    self.spec = spec
+    self.checkpoint_path = Path(checkpoint_path)
+    self.calibrator_path = Path(calibrator_path)
+    self.calibration_metadata_path = Path(
+        calibration_metadata_path)
 
         if not self.checkpoint_path.exists():
             raise FileNotFoundError(
@@ -256,6 +260,111 @@ class CPRDStandaloneModelAdapter:
             "age_scaler_mean": self.age_mean,
             "age_scaler_scale": self.age_scale,
         }
+            if not self.calibrator_path.exists():
+            raise FileNotFoundError(
+                "Standalone CPRD calibrator was not found at: "
+                f"{self.calibrator_path}"
+            )
+
+        self.calibrator = joblib.load(
+            self.calibrator_path
+        )
+
+        if not hasattr(
+            self.calibrator,
+            "predict_proba",
+        ):
+            raise TypeError(
+                "The standalone CPRD calibrator does not "
+                "provide predict_proba()."
+            )
+
+        if not self.calibration_metadata_path.exists():
+            raise FileNotFoundError(
+                "Standalone CPRD calibration metadata was "
+                "not found at: "
+                f"{self.calibration_metadata_path}"
+            )
+
+        with self.calibration_metadata_path.open(
+            "r",
+            encoding="utf-8",
+        ) as metadata_file:
+            self.calibration_metadata = json.load(
+                metadata_file
+            )
+
+        required_metadata_fields = [
+            "calibration_method",
+            "calibration_input",
+            "calibration_population",
+            "outcome_definition",
+            "prediction_horizon_months",
+            "calibrated_threshold",
+        ]
+
+        missing_metadata_fields = [
+            field_name
+            for field_name in required_metadata_fields
+            if field_name
+            not in self.calibration_metadata
+        ]
+
+        if missing_metadata_fields:
+            raise KeyError(
+                "Standalone CPRD calibration metadata is "
+                "missing: "
+                + ", ".join(missing_metadata_fields)
+            )
+
+        if (
+            self.calibration_metadata[
+                "calibration_input"
+            ]
+            != "raw_logit"
+        ):
+            raise ValueError(
+                "The standalone CPRD calibrator must use "
+                "raw_logit as its input."
+            )
+
+        self.threshold = float(
+            self.calibration_metadata[
+                "calibrated_threshold"
+            ]
+        )
+
+        if not 0.0 <= self.threshold <= 1.0:
+            raise ValueError(
+                "The standalone CPRD calibrated threshold "
+                "must be between zero and one."
+            )
+
+        self.metadata.update(
+            {
+                "calibrated_threshold": self.threshold,
+                "calibration_method": (
+                    self.calibration_metadata[
+                        "calibration_method"
+                    ]
+                ),
+                "calibration_population": (
+                    self.calibration_metadata[
+                        "calibration_population"
+                    ]
+                ),
+                "outcome_definition": (
+                    self.calibration_metadata[
+                        "outcome_definition"
+                    ]
+                ),
+                "prediction_horizon_months": (
+                    self.calibration_metadata[
+                        "prediction_horizon_months"
+                    ]
+                ),
+            }
+        )
 
     @staticmethod
     def _binary_value(value: Any) -> Tuple[float, bool]:
@@ -462,6 +571,131 @@ class CPRDStandaloneModelAdapter:
             "imputed_features": imputed_features,
             "model_input": tensor.tolist()[0],
         }
+            def predict(
+        self,
+        features: Mapping[str, Any],
+    ) -> Prediction:
+        """
+        Generate a calibrated standalone CPRD prediction.
+        """
+
+        technical_result = self.predict_raw(
+            features
+        )
+
+        raw_logit = float(
+            technical_result["raw_logit"]
+        )
+
+        raw_score = float(
+            technical_result[
+                "raw_sigmoid_score"
+            ]
+        )
+
+        imputed_features = list(
+            technical_result[
+                "imputed_features"
+            ]
+        )
+
+        coverage = float(
+            technical_result[
+                "input_coverage"
+            ]
+        )
+
+        calibrated_risk = float(
+            self.calibrator.predict_proba(
+                np.asarray(
+                    [[raw_logit]],
+                    dtype=np.float64,
+                )
+            )[0, 1]
+        )
+
+        if not np.isfinite(calibrated_risk):
+            raise ValueError(
+                "The standalone CPRD calibrator returned "
+                "a non-finite value."
+            )
+
+        if not 0.0 <= calibrated_risk <= 1.0:
+            raise ValueError(
+                "The standalone CPRD calibrated probability "
+                "is outside the interval [0, 1]."
+            )
+
+        if calibrated_risk >= self.threshold:
+            category = (
+                "At or above the selected research "
+                "operating threshold"
+            )
+        else:
+            category = (
+                "Below the selected research "
+                "operating threshold"
+            )
+
+        warnings: List[str] = []
+
+        if imputed_features:
+            readable_names = [
+                FEATURE_LABELS.get(
+                    feature_name,
+                    feature_name,
+                )
+                for feature_name in imputed_features
+            ]
+
+            warnings.append(
+                "Missing model inputs were handled using "
+                "the preprocessing rule applied during "
+                "training: "
+                + ", ".join(readable_names)
+                + "."
+            )
+
+        warnings.append(
+            "This is an internally calibrated research "
+            "estimate. The operating threshold is not a "
+            "clinically validated referral threshold."
+        )
+
+        warnings.append(
+            "The estimate supports clinical assessment "
+            "and does not rule lung cancer in or out."
+        )
+
+        return Prediction(
+            model_id=self.spec.model_id,
+            model_name=self.spec.display_name,
+            probability=calibrated_risk,
+            threshold=self.threshold,
+            category=category,
+            input_coverage=coverage,
+            imputed_features=imputed_features,
+            warnings=warnings,
+            contributions=[],
+            raw_score=raw_score,
+            calibration_method=(
+                self.calibration_metadata[
+                    "calibration_method"
+                ]
+            ),
+            calibration_population=(
+                self.calibration_metadata[
+                    "calibration_population"
+                ]
+            ),
+            prediction_horizon_months=int(
+                self.calibration_metadata[
+                    "prediction_horizon_months"
+                ]
+            ),
+            calibrated=True,
+            placeholder=False,
+        )
 class HarmonisedMLP(nn.Module):
     """Exact MLP used by the CPRD–VARHA experiment."""
 
@@ -1043,9 +1277,26 @@ def load_model_registry() -> Dict[str, Any]:
     flush=True,)
 
     return {
-        "cprd": PlaceholderRiskModel(
-            MODEL_SPECS["cprd"]
-        ),
+        "cprd": CPRDStandaloneModelAdapter(
+    spec=MODEL_SPECS["cprd"],
+    checkpoint_path=(
+        app_directory
+        / "models"
+        / "cprd"
+        / "standalone_CPRD_same_MLP.pt"
+    ),
+    calibrator_path=(
+        app_directory
+        / "models"
+        / "cprd"
+        / "calibrator.joblib"
+    ),
+    calibration_metadata_path=(
+        app_directory
+        / "models"
+        / "cprd"
+        / "calibration_metadata.json"
+    ),),
 
         "cprd_varha": CPRDVARHAModelAdapter(
             spec=MODEL_SPECS["cprd_varha"],
@@ -1620,9 +1871,25 @@ def prediction_card(
 
 def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> None:
     st.subheader("Risk assessment result")
+    if any(
+        prediction.placeholder
+        for prediction in predictions.values()
+    ):
+        result_notice = (
+            "<strong>Prototype mode:</strong> One or more "
+            "displayed results use a placeholder scoring "
+            "function."
+        )
+    else:
+        result_notice = (
+            "<strong>Research-model mode:</strong> The "
+            "displayed values come from exported research "
+            "models with internal calibration. They are not "
+            "clinically validated for patient-care decisions."
+        )
+
     st.markdown(
-        '<div class="prototype"><strong>Prototype mode:</strong> These values come from a placeholder scoring function, '
-        'not the exported research models. They must not be used for patient care.</div>',
+        f'<div class="prototype">{result_notice}</div>',
         unsafe_allow_html=True,
     )
     if safety_flag:
