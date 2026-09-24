@@ -1042,9 +1042,9 @@ def load_model_registry() -> Dict[str, Any]:
     )
 
     print(
-        "CPRD standalone technical test:",
-        cprd_test_result,
-    )
+    "CPRD standalone technical test:",
+    cprd_test_result,
+    flush=True,)
 
     return {
         "cprd": PlaceholderRiskModel(
