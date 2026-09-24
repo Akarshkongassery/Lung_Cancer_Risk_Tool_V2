@@ -575,9 +575,7 @@ class CPRDStandaloneModelAdapter:
         self,
         features: Mapping[str, Any],
     ) -> Prediction:
-        """
-        Generate a calibrated standalone CPRD prediction.
-        """
+        """Generate a calibrated standalone CPRD prediction."""
 
         technical_result = self.predict_raw(
             features
