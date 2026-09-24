@@ -1021,6 +1021,31 @@ class PlaceholderRiskModel:
 
 def load_model_registry() -> Dict[str, Any]:
     app_directory = Path(__file__).resolve().parent
+        cprd_test_adapter = CPRDStandaloneModelAdapter(
+        spec=MODEL_SPECS["cprd"],
+        checkpoint_path=(
+            app_directory
+            / "models"
+            / "cprd"
+            / "standalone_CPRD_same_MLP.pt"
+        ),
+    )
+
+    cprd_test_result = cprd_test_adapter.predict_raw(
+        {
+            "age": 85,
+            "cerebrovascular": True,
+            "ckd": True,
+            "copd_emphysema": True,
+            "cardiovascular": True,
+            "liver": True,
+        }
+    )
+
+    print(
+        "CPRD standalone technical test:",
+        cprd_test_result,
+    )
 
     return {
         "cprd": PlaceholderRiskModel(
