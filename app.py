@@ -571,10 +571,7 @@ class CPRDStandaloneModelAdapter:
             "imputed_features": imputed_features,
             "model_input": tensor.tolist()[0],
         }
-        def predict(
-        self,
-        features: Mapping[str, Any],
-    ) -> Prediction:
+        def predict(self,features: Mapping[str, Any],) -> Prediction:
         """Generate a calibrated standalone CPRD prediction."""
 
         technical_result = self.predict_raw(
