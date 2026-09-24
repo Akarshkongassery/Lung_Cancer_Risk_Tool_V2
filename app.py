@@ -1928,7 +1928,7 @@ def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> 
             with st.expander(spec.display_name):
                 st.write(spec.description)
                 st.write(f"**Population:** {spec.population}")
-                                if prediction.calibrated:
+                if prediction.calibrated:
                     st.write(
                         "**Status:** Exported research model "
                         "with internal probability calibration."
