@@ -1,0 +1,18 @@
+{
+  "model_id": "cprd_varha",
+  "model_version": "1.0",
+  "calibration_version": "1.0",
+  "calibration_method": "logistic_platt",
+  "calibration_input": "raw_logit",
+  "calibration_population": "CPRD Aurum",
+  "outcome_definition": "Recorded lung-cancer outcome defined by the modelling dataset",
+  "prediction_horizon_months": 12,
+  "calibrated_threshold": 0.041901188383335786,
+  "original_raw_threshold": 0.82,
+  "threshold_selection_basis": "Mapped from the checkpoint CPRD validation threshold to preserve the existing research classification boundary; not a newly clinician-approved intervention threshold.",
+  "calibration_sample_size": 291906,
+  "calibration_events": 2920,
+  "observed_prevalence": 0.010003220214726658,
+  "source_predictions_file": "adaptive_CPRD_test_predictions.csv.gz",
+  "evaluation_limitation": "Metrics are apparent calibration-set metrics. Independent evaluation remains required."
+}
