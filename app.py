@@ -891,7 +891,7 @@ class CPRDVARHAModelAdapter:
         # -----------------------------------------------
         # Apply the calibrated operating threshold
         # -----------------------------------------------
-        if calibrated_risk >= self.threshold:
+                if calibrated_risk >= self.threshold:
             category = (
                 "At or above the selected investigation "
                 "threshold"
@@ -900,64 +900,60 @@ class CPRDVARHAModelAdapter:
             category = (
                 "Below the selected investigation threshold"
             )
-            warnings: List[str] = []
-    
-            if imputed_features:
-                readable_names = [
-                    FEATURE_LABELS.get(
-                        feature_name,
-                        feature_name,
-                    )
-                    for feature_name in imputed_features
-                ]
-    
-                warnings.append(
-                    "Missing model inputs were handled using "
-                    "the preprocessing rule applied during "
-                    "training: "
-                    + ", ".join(readable_names)
-                    + "."
+
+        warnings: List[str] = []
+
+        if imputed_features:
+            readable_names = [
+                FEATURE_LABELS.get(
+                    feature_name,
+                    feature_name,
                 )
-    
+                for feature_name in imputed_features
+            ]
+
             warnings.append(
-    "This estimated probability supports clinical "
-    "assessment and does not rule lung cancer in "
-    "or out."
-)
+                "Missing model inputs were handled using "
+                "the preprocessing rule applied during "
+                "training: "
+                + ", ".join(readable_names)
+                + "."
+            )
 
-            return Prediction(
-    model_id=self.spec.model_id,
-    model_name=self.spec.display_name,
+        warnings.append(
+            "This estimated probability supports clinical "
+            "assessment and does not rule lung cancer in "
+            "or out."
+        )
 
-    # This is now the calibrated probability.
-    probability=calibrated_risk,
+        return Prediction(
+            model_id=self.spec.model_id,
+            model_name=self.spec.display_name,
+            probability=calibrated_risk,
+            threshold=self.threshold,
+            category=category,
+            input_coverage=float(coverage),
+            imputed_features=imputed_features,
+            warnings=warnings,
+            contributions=[],
+            raw_score=raw_score,
+            calibration_method=self.calibration_metadata[
+                "calibration_method"
+            ],
+            calibration_population=self.calibration_metadata[
+                "calibration_population"
+            ],
+            prediction_horizon_months=int(
+                self.calibration_metadata[
+                    "prediction_horizon_months"
+                ]
+            ),
+            calibrated=True,
+            placeholder=False,
+        )
 
-    # This is now the calibrated threshold.
-    threshold=self.threshold,
 
-    category=category,
-    input_coverage=float(coverage),
-    imputed_features=imputed_features,
-    warnings=warnings,
-    contributions=[],
 
-    # Retained internally, not displayed prominently.
-    raw_score=raw_score,
-
-    calibration_method=self.calibration_metadata[
-        "calibration_method"
-    ],
-    calibration_population=self.calibration_metadata[
-        "calibration_population"
-    ],
-    prediction_horizon_months=int(
-        self.calibration_metadata[
-            "prediction_horizon_months"
-        ]
-    ),
-    calibrated=True,
-    placeholder=False,
-)
 
 
 class PlaceholderRiskModel:
