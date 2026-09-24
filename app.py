@@ -571,7 +571,7 @@ class CPRDStandaloneModelAdapter:
             "imputed_features": imputed_features,
             "model_input": tensor.tolist()[0],
         }
-            def predict(
+        def predict(
         self,
         features: Mapping[str, Any],
     ) -> Prediction:
