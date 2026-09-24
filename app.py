@@ -564,13 +564,12 @@ class CPRDStandaloneModelAdapter:
             ).item()
         )
 
-            return {
+        return {
             "raw_logit": raw_logit,
             "raw_sigmoid_score": raw_sigmoid_score,
             "input_coverage": coverage,
             "imputed_features": imputed_features,
-            "model_input": tensor.tolist()[0],
-        }
+            "model_input": tensor.tolist()[0],}
 
     def predict(
         self,
