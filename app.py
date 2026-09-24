@@ -260,7 +260,7 @@ class CPRDStandaloneModelAdapter:
             "age_scaler_mean": self.age_mean,
             "age_scaler_scale": self.age_scale,
         }
-            if not self.calibrator_path.exists():
+        if not self.calibrator_path.exists():
             raise FileNotFoundError(
                 "Standalone CPRD calibrator was not found at: "
                 f"{self.calibrator_path}"
