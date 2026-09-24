@@ -140,7 +140,28 @@ class Prediction:
     prediction_horizon_months: Optional[int] = None
     calibrated: bool = False
     placeholder: bool = True
-    
+class CPRDStandaloneMLP(nn.Module):
+    """Exact architecture of the standalone CPRD model."""
+
+    def __init__(self):
+        super().__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(18, 32),
+            nn.ReLU(),
+            nn.Dropout(0.20),
+
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Dropout(0.10),
+
+            nn.Linear(16, 1),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x).squeeze(1)
+
+
 class HarmonisedMLP(nn.Module):
     """Exact MLP used by the CPRD–VARHA experiment."""
 
