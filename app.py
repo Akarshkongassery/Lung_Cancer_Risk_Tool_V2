@@ -891,7 +891,7 @@ class CPRDVARHAModelAdapter:
         # -----------------------------------------------
         # Apply the calibrated operating threshold
         # -----------------------------------------------
-                if calibrated_risk >= self.threshold:
+        if calibrated_risk >= self.threshold:
             category = (
                 "At or above the selected investigation "
                 "threshold"
