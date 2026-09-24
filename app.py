@@ -1929,7 +1929,33 @@ def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> 
             with st.expander(spec.display_name):
                 st.write(spec.description)
                 st.write(f"**Population:** {spec.population}")
-                st.write("**Status:** Placeholder adapter awaiting the trained pipeline, calibrator and validated threshold.")
+                                if prediction.calibrated:
+                    st.write(
+                        "**Status:** Exported research model "
+                        "with internal probability calibration."
+                    )
+                    st.write(
+                        "**Calibration method:** "
+                        f"{prediction.calibration_method}"
+                    )
+                    st.write(
+                        "**Calibration population:** "
+                        f"{prediction.calibration_population}"
+                    )
+                    st.write(
+                        "**Research operating threshold:** "
+                        f"{prediction.threshold:.2%}"
+                    )
+                    st.caption(
+                        "This is not a clinically validated "
+                        "referral or investigation threshold."
+                    )
+                else:
+                    st.write(
+                        "**Status:** Placeholder adapter "
+                        "awaiting a trained pipeline and "
+                        "calibration."
+                    )
 
 
 def collect_decision(safety_flag: bool) -> Dict[str, Any]:
