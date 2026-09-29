@@ -2690,11 +2690,6 @@ def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> 
         unsafe_allow_html=True,
     )
     if safety_flag:
-        st.markdown(
-            '<div class="safety"><strong>Warning features remain active.</strong> The prediction does not override '
-            'clinical findings or an urgent referral pathway.</div>',
-            unsafe_allow_html=True,
-        )
 
     cols = st.columns(min(len(predictions), 4))
     for col, prediction in zip(cols, predictions.values()):
