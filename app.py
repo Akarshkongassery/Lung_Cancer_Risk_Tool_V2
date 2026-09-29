@@ -16,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import pandas as pd
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -43,6 +44,8 @@ class ModelSpec:
     threshold: float
     colour: str
     description: str
+    research_only: bool = False
+    
 
 
 MODEL_SPECS: Dict[str, ModelSpec] = {
@@ -70,6 +73,43 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
     "was selected using mean validation AUROC."
 ),
     ),
+        "mimic": ModelSpec(
+        model_id="mimic",
+        display_name=(
+            "MIMIC-IV centralised "
+            "silver-phenotype model"
+        ),
+        population=(
+            "MIMIC-IV hospital-admission cohort"
+        ),
+        threshold=0.61,
+        colour="#7B61A8",
+        description=(
+            "Centralised research model trained to detect "
+            "a high-confidence derived lung-cancer silver "
+            "phenotype in MIMIC-IV admissions."
+        ),
+        research_only=True,
+    ),
+
+    "eicu": ModelSpec(
+        model_id="eicu",
+        display_name=(
+            "eICU centralised "
+            "silver-phenotype model"
+        ),
+        population="eICU critical-care cohort",
+        threshold=0.05,
+        colour="#A86732",
+        description=(
+            "Centralised research model trained to detect "
+            "a high-confidence derived lung-cancer silver "
+            "phenotype in eICU admissions."
+        ),
+        research_only=True,
+    ),
+
+
 }
 
 MODEL_FEATURES: Dict[str, List[str]] = {
@@ -1294,6 +1334,24 @@ def load_model_registry() -> Dict[str, Any]:
                 / "calibration_metadata.json"
             ),
         ),
+
+                "mimic": HospitalSilverPhenotypeAdapter(
+            spec=MODEL_SPECS["mimic"],
+            artifact_directory=(
+                app_directory
+                / "models"
+                / "mimic"
+            ),
+        ),
+
+        "eicu": HospitalSilverPhenotypeAdapter(
+            spec=MODEL_SPECS["eicu"],
+            artifact_directory=(
+                app_directory
+                / "models"
+                / "eicu"
+            ),
+        ),
     }
 
 
@@ -1679,10 +1737,12 @@ def collect_assessment() -> Tuple[Dict[str, Any], Dict[str, Any]]:
     
         features: Dict[str, Any] = {
             "age": age,
+            "sex_recorded": sex,
             "gender_1": sex == "Male",
             "smk_qt_final_2_2": smoking,
             "alc_units_day_7": alcohol_units_week,
             "bmifinal2": bmi if bmi_known else 25.0,
+            "bmi_available": bmi_known,
             "famhlg_1": family_lung or family_cancer,
             "familyhcancer_1": family_cancer,
             "thyroid_ca_1": "Thyroid" in previous_cancer,
@@ -1797,7 +1857,18 @@ def prediction_card(
             )
             return
 
-        if prediction.prediction_horizon_months:
+                if prediction.model_id in {
+            "mimic",
+            "eicu",
+        }:
+            st.caption(
+                "Internally calibrated estimate of the "
+                "modelled high-confidence silver phenotype. "
+                "This is not a confirmed lung-cancer "
+                "probability."
+            )
+
+        elif prediction.prediction_horizon_months:
             st.caption(
                 "Estimated probability of the modelled "
                 "lung-cancer outcome within "
@@ -1823,8 +1894,17 @@ def prediction_card(
             f"**{prediction.category}**"
         )
 
+        threshold_label = (
+            "Internal research operating threshold"
+            if prediction.model_id in {
+                "mimic",
+                "eicu",
+            }
+            else "Selected investigation threshold"
+        )
+
         st.caption(
-            "Selected investigation threshold: "
+            f"{threshold_label}: "
             f"{prediction.threshold:.1%} · "
             "Input coverage: "
             f"{prediction.input_coverage:.0%}"
@@ -2005,15 +2085,28 @@ def sidebar() -> Tuple[str, List[str]]:
         st.markdown("**Assessment workspace**")
         mode = st.radio("View", ["Clinical demonstration", "Research comparison"])
         if mode == "Clinical demonstration":
-            label_to_id = {spec.display_name: model_id for model_id, spec in MODEL_SPECS.items()}
+            label_to_id = {
+                spec.display_name: model_id
+                for model_id, spec
+                in MODEL_SPECS.items()
+                if not spec.research_only
+            }
             chosen_label = st.selectbox("Assessment model", list(label_to_id), index=0)
             selected = [label_to_id[chosen_label]]
         else:
+            research_model_ids = list(
+                MODEL_SPECS
+            )
+
             selected = st.multiselect(
                 "Models to compare",
-                options=list(MODEL_SPECS),
-                default=list(MODEL_SPECS),
-                format_func=lambda model_id: MODEL_SPECS[model_id].display_name,
+                options=research_model_ids,
+                default=research_model_ids,
+                format_func=lambda model_id: (
+                    MODEL_SPECS[
+                        model_id
+                    ].display_name
+                ),
             )
         st.divider()
         st.caption(f"{APP_VERSION}")
