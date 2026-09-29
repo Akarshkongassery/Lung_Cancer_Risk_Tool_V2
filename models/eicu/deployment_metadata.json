@@ -1,0 +1,74 @@
+{
+  "model_id": "eicu",
+  "display_name": "eICU centralised silver-phenotype model",
+  "selected_experiment": "centralized_real",
+  "development_population": "eICU critical-care cohort",
+  "target": "silver_label",
+  "target_description": "High-confidence derived lung-cancer silver phenotype",
+  "prediction_horizon_months": null,
+  "intended_view": "Research comparison only",
+  "clinical_status": "Research only; not a confirmed lung-cancer probability model",
+  "features": [
+    "age",
+    "gender_1",
+    "smk_qt_final_2_2",
+    "alc_units_day_7",
+    "bmifinal2",
+    "famhlg_1",
+    "familyhcancer_1",
+    "thyroid_ca_1",
+    "stomach_ca_1",
+    "kidney_ca_1",
+    "copd_com",
+    "ovary_ca_1",
+    "lek_1",
+    "myeloma_1",
+    "melanoma_1",
+    "hdnk_ca_1",
+    "bladder_ca_1",
+    "pancreas_1",
+    "dyspnoeaoneyear",
+    "haemoptysisoneyear",
+    "sputumoneyear",
+    "weightlossoneyear"
+  ],
+  "input_dimension": 31,
+  "hidden_dimensions": [
+    128,
+    64,
+    32,
+    16
+  ],
+  "dropout": 0.2,
+  "calibrated_threshold": 0.05,
+  "calibration_method": "Platt logistic calibration",
+  "calibration_input": "logit of clipped raw sigmoid probability",
+  "sklearn_version": "1.7.2",
+  "age_mapping": {
+    "0": "50\u201354",
+    "1": "55\u201359",
+    "2": "60\u201364",
+    "3": "65\u201369",
+    "4": "70\u201374",
+    "5": "75 or older"
+  },
+  "bmi_mapping": {
+    "0": "Missing or invalid",
+    "1": "Below 18.5",
+    "2": "18.5\u201324.99",
+    "3": "25\u201329.99",
+    "4": "30 or above"
+  },
+  "sex_mapping": {
+    "0": "Male",
+    "1": "Female"
+  },
+  "constant_zero_features": [
+    "alc_units_day_7",
+    "famhlg_1",
+    "familyhcancer_1",
+    "haemoptysisoneyear",
+    "smk_qt_final_2_2",
+    "sputumoneyear"
+  ]
+}
