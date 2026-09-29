@@ -695,11 +695,11 @@ class CPRDStandaloneModelAdapter:
                 + "."
             )
 
-        warnings.append(
-            "This is an internally calibrated research "
-            "estimate. The operating threshold is not a "
-            "clinically validated referral threshold."
-        )
+        # warnings.append(
+        #     "This is an internally calibrated research "
+        #     "estimate. The operating threshold is not a "
+        #     "clinically validated referral threshold."
+        # )
 
         warnings.append(
             "The estimate supports clinical assessment "
