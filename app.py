@@ -1857,7 +1857,7 @@ def prediction_card(
             )
             return
 
-                if prediction.model_id in {
+            if prediction.model_id in {
             "mimic",
             "eicu",
         }:
