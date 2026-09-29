@@ -735,6 +735,757 @@ class CPRDStandaloneModelAdapter:
             calibrated=True,
             placeholder=False,
         )
+class HospitalSilverPhenotypeMLP(nn.Module):
+    """
+    Dynamic MLP used by the selected MIMIC-IV and eICU models.
+    """
+
+    def __init__(
+        self,
+        input_dimension: int,
+        hidden_dimensions: Tuple[int, ...],
+        dropout: float,
+    ):
+        super().__init__()
+
+        layers: List[nn.Module] = []
+        previous_dimension = input_dimension
+
+        for hidden_dimension in hidden_dimensions:
+            layers.extend(
+                [
+                    nn.Linear(
+                        previous_dimension,
+                        hidden_dimension,
+                    ),
+                    nn.LayerNorm(
+                        hidden_dimension
+                    ),
+                    nn.ReLU(),
+                    nn.Dropout(
+                        dropout
+                    ),
+                ]
+            )
+
+            previous_dimension = (
+                hidden_dimension
+            )
+
+        layers.append(
+            nn.Linear(
+                previous_dimension,
+                1,
+            )
+        )
+
+        self.network = nn.Sequential(
+            *layers
+        )
+
+    def forward(
+        self,
+        x: torch.Tensor,
+    ) -> torch.Tensor:
+        return self.network(x).squeeze(-1)
+
+
+class HospitalSilverPhenotypeAdapter:
+    """
+    Shared research-only inference adapter for the
+    MIMIC-IV and eICU silver-phenotype models.
+    """
+
+    def __init__(
+        self,
+        spec: ModelSpec,
+        artifact_directory: Path,
+    ):
+        self.spec = spec
+
+        self.artifact_directory = Path(
+            artifact_directory
+        )
+
+        self.checkpoint_path = (
+            self.artifact_directory
+            / "model.pt"
+        )
+
+        self.preprocessor_path = (
+            self.artifact_directory
+            / "preprocessor.joblib"
+        )
+
+        self.calibrator_path = (
+            self.artifact_directory
+            / "calibrator.joblib"
+        )
+
+        self.metadata_path = (
+            self.artifact_directory
+            / "deployment_metadata.json"
+        )
+
+        required_paths = [
+            self.checkpoint_path,
+            self.preprocessor_path,
+            self.calibrator_path,
+            self.metadata_path,
+        ]
+
+        missing_paths = [
+            str(path)
+            for path in required_paths
+            if not path.exists()
+        ]
+
+        if missing_paths:
+            raise FileNotFoundError(
+                "Missing hospital-model deployment "
+                "artifacts: "
+                + ", ".join(missing_paths)
+            )
+
+        checkpoint = torch.load(
+            self.checkpoint_path,
+            map_location="cpu",
+            weights_only=False,
+        )
+
+        required_checkpoint_fields = [
+            "state_dict",
+            "input_dimension",
+            "features",
+            "hidden_dimensions",
+            "dropout",
+            "threshold",
+            "experiment",
+        ]
+
+        missing_checkpoint_fields = [
+            field_name
+            for field_name
+            in required_checkpoint_fields
+            if field_name not in checkpoint
+        ]
+
+        if missing_checkpoint_fields:
+            raise KeyError(
+                "Hospital-model checkpoint is "
+                "missing: "
+                + ", ".join(
+                    missing_checkpoint_fields
+                )
+            )
+
+        with self.metadata_path.open(
+            "r",
+            encoding="utf-8",
+        ) as metadata_file:
+            self.metadata = json.load(
+                metadata_file
+            )
+
+        if (
+            self.metadata.get("model_id")
+            != self.spec.model_id
+        ):
+            raise ValueError(
+                "Hospital-model metadata ID does "
+                "not match the registry ID."
+            )
+
+        self.features = list(
+            checkpoint["features"]
+        )
+
+        metadata_features = list(
+            self.metadata.get(
+                "features",
+                [],
+            )
+        )
+
+        if metadata_features != self.features:
+            raise ValueError(
+                "Hospital-model checkpoint and "
+                "metadata feature orders differ."
+            )
+
+        self.input_dimension = int(
+            checkpoint["input_dimension"]
+        )
+
+        self.hidden_dimensions = tuple(
+            int(value)
+            for value
+            in checkpoint[
+                "hidden_dimensions"
+            ]
+        )
+
+        self.dropout = float(
+            checkpoint["dropout"]
+        )
+
+        self.threshold = float(
+            checkpoint["threshold"]
+        )
+
+        self.constant_zero_features = set(
+            self.metadata.get(
+                "constant_zero_features",
+                [],
+            )
+        )
+
+        if not 0.0 <= self.threshold <= 1.0:
+            raise ValueError(
+                "Hospital-model threshold must "
+                "lie in [0, 1]."
+            )
+
+        self.preprocessor = joblib.load(
+            self.preprocessor_path
+        )
+
+        self.calibrator = joblib.load(
+            self.calibrator_path
+        )
+
+        if not hasattr(
+            self.preprocessor,
+            "transform",
+        ):
+            raise TypeError(
+                "Hospital-model preprocessor "
+                "has no transform() method."
+            )
+
+        if not hasattr(
+            self.calibrator,
+            "predict_proba",
+        ):
+            raise TypeError(
+                "Hospital-model calibrator has "
+                "no predict_proba() method."
+            )
+
+        self.model = (
+            HospitalSilverPhenotypeMLP(
+                input_dimension=(
+                    self.input_dimension
+                ),
+                hidden_dimensions=(
+                    self.hidden_dimensions
+                ),
+                dropout=self.dropout,
+            )
+        )
+
+        self.model.load_state_dict(
+            checkpoint["state_dict"]
+        )
+
+        self.model.to("cpu")
+        self.model.eval()
+
+    @staticmethod
+    def _age_category(
+        value: Any,
+    ) -> Tuple[float, bool, bool]:
+        """
+        Convert raw age into the category used
+        during MIMIC/eICU preprocessing.
+
+        Returns:
+            category,
+            whether age was missing,
+            whether age was outside development range.
+        """
+
+        try:
+            age = float(value)
+
+            if not np.isfinite(age):
+                raise ValueError
+
+        except (TypeError, ValueError):
+            return 0.0, True, False
+
+        outside_development_range = (
+            age < 50.0
+            or age > 80.0
+        )
+
+        age = float(
+            np.clip(
+                age,
+                50.0,
+                80.0,
+            )
+        )
+
+        if age < 55.0:
+            category = 0.0
+        elif age < 60.0:
+            category = 1.0
+        elif age < 65.0:
+            category = 2.0
+        elif age < 70.0:
+            category = 3.0
+        elif age < 75.0:
+            category = 4.0
+        else:
+            category = 5.0
+
+        return (
+            category,
+            False,
+            outside_development_range,
+        )
+
+    @staticmethod
+    def _bmi_category(
+        value: Any,
+        available: Any,
+    ) -> Tuple[float, bool]:
+        """
+        Convert raw BMI into the category used
+        during MIMIC/eICU preprocessing.
+        """
+
+        if available is False:
+            return 0.0, True
+
+        try:
+            bmi = float(value)
+
+            if (
+                not np.isfinite(bmi)
+                or bmi <= 0.0
+            ):
+                raise ValueError
+
+        except (TypeError, ValueError):
+            return 0.0, True
+
+        if bmi < 18.5:
+            category = 1.0
+        elif bmi < 25.0:
+            category = 2.0
+        elif bmi < 30.0:
+            category = 3.0
+        else:
+            category = 4.0
+
+        return category, False
+
+    @staticmethod
+    def _binary_value(
+        value: Any,
+    ) -> Tuple[float, bool]:
+        """
+        Convert a UI value into zero or one.
+
+        Returns:
+            converted value,
+            whether missing-value handling was used.
+        """
+
+        if value is None:
+            return 0.0, True
+
+        if isinstance(value, str):
+            normalised = (
+                value.strip().lower()
+            )
+
+            if normalised in {
+                "yes",
+                "true",
+                "1",
+                "1.0",
+            }:
+                return 1.0, False
+
+            if normalised in {
+                "no",
+                "false",
+                "0",
+                "0.0",
+            }:
+                return 0.0, False
+
+            return 0.0, True
+
+        try:
+            numeric_value = float(value)
+
+            if not np.isfinite(
+                numeric_value
+            ):
+                return 0.0, True
+
+            if numeric_value > 0.0:
+                return 1.0, False
+
+            return 0.0, False
+
+        except (TypeError, ValueError):
+            return 0.0, True
+
+    def _prepare_input(
+        self,
+        patient_record: Mapping[str, Any],
+    ) -> Tuple[
+        torch.Tensor,
+        List[str],
+        float,
+        List[str],
+    ]:
+        """
+        Construct the exact preprocessed tensor expected
+        by the selected MIMIC/eICU model.
+        """
+
+        imputed_features: List[str] = []
+        preparation_warnings: List[str] = []
+
+        (
+            age_category,
+            age_imputed,
+            age_outside_range,
+        ) = self._age_category(
+            patient_record.get("age")
+        )
+
+        if age_imputed:
+            imputed_features.append(
+                "age"
+            )
+
+        if age_outside_range:
+            preparation_warnings.append(
+                "Age was outside the 50–80-year "
+                "development range and was clipped "
+                "for this research-model calculation."
+            )
+
+        (
+            bmi_category,
+            bmi_imputed,
+        ) = self._bmi_category(
+            patient_record.get(
+                "bmifinal2"
+            ),
+            patient_record.get(
+                "bmi_available",
+                True,
+            ),
+        )
+
+        if bmi_imputed:
+            imputed_features.append(
+                "bmifinal2"
+            )
+
+        recorded_sex = str(
+            patient_record.get(
+                "sex_recorded",
+                "",
+            )
+        ).strip().lower()
+
+        if recorded_sex == "male":
+            gender_value = 0.0
+
+        elif recorded_sex == "female":
+            gender_value = 1.0
+
+        else:
+            # The training imputer's most frequent
+            # value was 1.
+            gender_value = 1.0
+
+            imputed_features.append(
+                "sex_recorded"
+            )
+
+        row: Dict[str, float] = {}
+
+        for feature_name in self.features:
+            if (
+                feature_name
+                in self.constant_zero_features
+            ):
+                # This variable did not vary in the
+                # selected model's training subset.
+                row[feature_name] = 0.0
+
+            elif feature_name == "age":
+                row[feature_name] = (
+                    age_category
+                )
+
+            elif feature_name == "bmifinal2":
+                row[feature_name] = (
+                    bmi_category
+                )
+
+            elif feature_name == "gender_1":
+                row[feature_name] = (
+                    gender_value
+                )
+
+            else:
+                (
+                    value,
+                    was_imputed,
+                ) = self._binary_value(
+                    patient_record.get(
+                        feature_name
+                    )
+                )
+
+                row[feature_name] = value
+
+                if was_imputed:
+                    imputed_features.append(
+                        feature_name
+                    )
+
+        raw_frame = pd.DataFrame(
+            [row],
+            columns=self.features,
+        )
+
+        transformed = np.asarray(
+            self.preprocessor.transform(
+                raw_frame
+            ),
+            dtype=np.float32,
+        )
+
+        expected_shape = (
+            1,
+            self.input_dimension,
+        )
+
+        if transformed.shape != expected_shape:
+            raise ValueError(
+                "Hospital-model preprocessor "
+                "returned shape "
+                f"{transformed.shape}; expected "
+                f"{expected_shape}."
+            )
+
+        if not np.isfinite(
+            transformed
+        ).all():
+            raise ValueError(
+                "Hospital-model input contains "
+                "non-finite values."
+            )
+
+        usable_features = [
+            feature_name
+            for feature_name in self.features
+            if (
+                feature_name
+                not in self.constant_zero_features
+            )
+        ]
+
+        missing_usable_features = {
+            feature_name
+            for feature_name
+            in imputed_features
+            if (
+                feature_name
+                in usable_features
+                or feature_name
+                in {
+                    "sex_recorded",
+                    "bmifinal2",
+                    "age",
+                }
+            )
+        }
+
+        observed_count = (
+            len(usable_features)
+            - len(
+                missing_usable_features
+            )
+        )
+
+        coverage = max(
+            0.0,
+            min(
+                1.0,
+                observed_count
+                / max(
+                    len(usable_features),
+                    1,
+                ),
+            ),
+        )
+
+        tensor = torch.from_numpy(
+            transformed
+        )
+
+        return (
+            tensor,
+            sorted(
+                set(imputed_features)
+            ),
+            coverage,
+            preparation_warnings,
+        )
+
+    def predict(
+        self,
+        features: Mapping[str, Any],
+    ) -> Prediction:
+        """
+        Generate an internally calibrated research-only
+        silver-phenotype estimate.
+        """
+
+        (
+            tensor,
+            imputed_features,
+            coverage,
+            warnings,
+        ) = self._prepare_input(
+            features
+        )
+
+        with torch.inference_mode():
+            raw_logit = float(
+                self.model(tensor)[0].item()
+            )
+
+        raw_score = float(
+            torch.sigmoid(
+                torch.tensor(
+                    raw_logit
+                )
+            ).item()
+        )
+
+        # Reproduce the exact calibration transformation
+        # used by the training pipeline.
+        clipped_score = float(
+            np.clip(
+                raw_score,
+                1e-6,
+                1.0 - 1e-6,
+            )
+        )
+
+        calibration_logit = math.log(
+            clipped_score
+            / (
+                1.0
+                - clipped_score
+            )
+        )
+
+        calibrated_probability = float(
+            self.calibrator.predict_proba(
+                np.asarray(
+                    [[calibration_logit]],
+                    dtype=np.float64,
+                )
+            )[0, 1]
+        )
+
+        if not np.isfinite(
+            calibrated_probability
+        ):
+            raise ValueError(
+                "Hospital-model calibrator returned "
+                "a non-finite value."
+            )
+
+        if not (
+            0.0
+            <= calibrated_probability
+            <= 1.0
+        ):
+            raise ValueError(
+                "Hospital-model calibrated value "
+                "is outside [0, 1]."
+            )
+
+        if (
+            calibrated_probability
+            >= self.threshold
+        ):
+            category = (
+                "At or above the internal "
+                "research operating threshold"
+            )
+        else:
+            category = (
+                "Below the internal research "
+                "operating threshold"
+            )
+
+        warnings.extend(
+            [
+                (
+                    "This model estimates a derived "
+                    "silver-label phenotype in a "
+                    "hospital or critical-care population."
+                ),
+                (
+                    "It is shown for research comparison "
+                    "only and is not a confirmed "
+                    "lung-cancer probability or a "
+                    "clinically validated referral tool."
+                ),
+            ]
+        )
+
+        return Prediction(
+            model_id=self.spec.model_id,
+            model_name=self.spec.display_name,
+            probability=(
+                calibrated_probability
+            ),
+            threshold=self.threshold,
+            category=category,
+            input_coverage=coverage,
+            imputed_features=(
+                imputed_features
+            ),
+            warnings=warnings,
+            contributions=[],
+            raw_score=raw_score,
+            calibration_method=str(
+                self.metadata.get(
+                    "calibration_method",
+                    (
+                        "Platt logistic "
+                        "calibration"
+                    ),
+                )
+            ),
+            calibration_population=str(
+                self.metadata.get(
+                    "development_population",
+                    self.spec.population,
+                )
+            ),
+            prediction_horizon_months=None,
+            calibrated=True,
+            placeholder=False,
+        )
 class HarmonisedMLP(nn.Module):
     """Exact MLP used by the CPRD–VARHA experiment."""
 
