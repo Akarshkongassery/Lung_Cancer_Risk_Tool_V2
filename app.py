@@ -76,8 +76,8 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
         "mimic": ModelSpec(
         model_id="mimic",
         display_name=(
-            "MIMIC-IV centralised "
-            "silver-phenotype model"
+            "Federated Model on MIMIC-IV "
+            "silver-phenotype Data"
         ),
         population=(
             "MIMIC-IV hospital-admission cohort"
@@ -85,7 +85,7 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
         threshold=0.61,
         colour="#7B61A8",
         description=(
-            "Centralised research model trained to detect "
+            " Model trained via federated scheme to detect "
             "a high-confidence derived lung-cancer silver "
             "phenotype in MIMIC-IV admissions."
         ),
@@ -95,14 +95,14 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
     "eicu": ModelSpec(
         model_id="eicu",
         display_name=(
-            "eICU centralised "
+            "Federated Model on eICU"
             "silver-phenotype model"
         ),
         population="eICU critical-care cohort",
         threshold=0.05,
         colour="#A86732",
         description=(
-            "Centralised research model trained to detect "
+            "Model trained via federated scheme to detect "
             "a high-confidence derived lung-cancer silver "
             "phenotype in eICU admissions."
         ),
