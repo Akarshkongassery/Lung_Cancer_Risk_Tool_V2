@@ -1861,7 +1861,7 @@ def prediction_card(
             "mimic",
             "eicu",
         }:
-            st.caption(
+                st.caption(
                 "Internally calibrated estimate of the "
                 "modelled high-confidence silver phenotype. "
                 "This is not a confirmed lung-cancer "
