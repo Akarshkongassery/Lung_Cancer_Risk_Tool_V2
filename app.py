@@ -1935,11 +1935,6 @@ class CPRDVARHAModelAdapter:
                 + "."
             )
 
-        warnings.append(
-            "This estimated probability supports clinical "
-            "assessment and does not rule lung cancer in "
-            "or out."
-        )
 
         return Prediction(
             model_id=self.spec.model_id,
