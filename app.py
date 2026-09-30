@@ -2691,7 +2691,7 @@ def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> 
         with col:
             prediction_card(prediction)
 
-    tabs = st.tabs(["Interpretation", "Contributing information", "Model details"])
+    tabs = st.tabs(["Interpretation", "Model details"])
     primary = next(iter(predictions.values()))
     with tabs[0]:
         st.write(
@@ -2700,16 +2700,6 @@ def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> 
         )
         for warning in primary.warnings:
             st.warning(warning)
-    with tabs[1]:
-        if primary.contributions:
-            st.write(f"Factors influencing the **{primary.model_name}** placeholder estimate:")
-            max_value = max(value for _, value in primary.contributions) or 1.0
-            for name, value in primary.contributions:
-                st.write(name)
-                st.progress(value / max_value)
-            st.caption("These are model contributions, not proven causal effects.")
-        else:
-            st.info("No positive placeholder contributions were identified.")
     with tabs[2]:
         for prediction in predictions.values():
             spec = MODEL_SPECS[prediction.model_id]
