@@ -2691,7 +2691,7 @@ def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> 
     )
     if safety_flag:
 
-    cols = st.columns(min(len(predictions), 4))
+        cols = st.columns(min(len(predictions), 4))
     for col, prediction in zip(cols, predictions.values()):
         with col:
             prediction_card(prediction)
