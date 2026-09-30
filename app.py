@@ -2830,9 +2830,40 @@ def sidebar() -> Tuple[str, List[str]]:
                     ].display_name
                 ),
             )
+
+
         st.divider()
+        
+        st.markdown("### Project information")
+        
+        st.caption(
+            "**PHASE IV AI**  \n"
+            "Privacy compliant health data as a service "
+            "for AI development"
+        )
+        
+        st.caption(
+            "**Grant agreement:** 101095384  \n"
+            "**Programme:** Horizon Europe – Health  \n"
+            "**Project period:** Oct 2023 – Dec 2026  \n"
+            "**Coordinator:** University of Turku  \n"
+            "**Demonstrator partner:** Nottingham Trent University"
+        )
+        
+        st.link_button(
+            "PHASE IV AI website",
+            "https://www.phase4ai-project.eu/",
+            use_container_width=True,
+        )
+        
+        st.link_button(
+            "Official EU project record",
+            "https://cordis.europa.eu/project/id/101095384",
+            use_container_width=True,
+        )
+        
         st.caption(f"{APP_VERSION}")
-    return mode, selected
+            return mode, selected
 
 
 def main() -> None:
