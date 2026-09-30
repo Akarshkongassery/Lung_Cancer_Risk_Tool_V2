@@ -56,7 +56,7 @@ MODEL_SPECS: Dict[str, ModelSpec] = {
         threshold=0.030,  # Temporary UI threshold
         colour="#007C83",
         description=(
-            "Standalone MLP trained using the harmonised "
+            "MLP trained on federated schema using the "
             "CPRD Aurum cohort."
         ),
     ),
