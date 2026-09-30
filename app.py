@@ -2859,18 +2859,16 @@ def sidebar() -> Tuple[str, List[str]]:
             "**Demonstrator partner:** Nottingham Trent University"
         )
         
-        st.link_button(
-            "PHASE IV AI website",
-            "https://www.phase4ai-project.eu/",
-            use_container_width=True,
-        )
-        
-        st.link_button(
-            "Official EU project record",
-            "https://cordis.europa.eu/project/id/101095384",
-            use_container_width=True,
-        )
-        
+        st.markdown(
+        "[PHASE IV AI website]"
+        "(https://www.phase4ai-project.eu/)"
+    )
+    
+        st.markdown(
+        "[Official EU project record]"
+        "(https://cordis.europa.eu/project/id/101095384)"
+    )
+            
         st.caption(f"{APP_VERSION}")
         return mode, selected
 
