@@ -2700,7 +2700,7 @@ def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> 
         )
         for warning in primary.warnings:
             st.warning(warning)
-    with tabs[2]:
+    with tabs[1]:
         for prediction in predictions.values():
             spec = MODEL_SPECS[prediction.model_id]
             with st.expander(spec.display_name):
