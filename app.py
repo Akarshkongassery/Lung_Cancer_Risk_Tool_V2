@@ -2685,7 +2685,7 @@ def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> 
         unsafe_allow_html=True,
     )
     if safety_flag:
-    st.warning(
+        st.warning(
         "**Warning features remain active.** "
         "The prediction does not override clinical findings "
         "or an urgent referral pathway."
