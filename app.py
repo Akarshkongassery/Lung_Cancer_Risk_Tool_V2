@@ -2863,7 +2863,7 @@ def sidebar() -> Tuple[str, List[str]]:
         )
         
         st.caption(f"{APP_VERSION}")
-            return mode, selected
+        return mode, selected
 
 
 def main() -> None:
