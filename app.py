@@ -51,7 +51,7 @@ class ModelSpec:
 MODEL_SPECS: Dict[str, ModelSpec] = {
     "cprd": ModelSpec(
         model_id="cprd",
-        display_name="CPRD standalone model",
+        display_name="Federated model from CPRD Aurum",
         population="CPRD Aurum primary-care cohort",
         threshold=0.030,  # Temporary UI threshold
         colour="#007C83",
