@@ -2685,18 +2685,23 @@ def render_results(predictions: Mapping[str, Prediction], safety_flag: bool) -> 
         unsafe_allow_html=True,
     )
     if safety_flag:
-        st.warning(
-            "**Warning features remain active.** "
-            "The prediction does not override clinical findings "
-            "or an urgent referral pathway."
+    st.warning(
+        "**Warning features remain active.** "
+        "The prediction does not override clinical findings "
+        "or an urgent referral pathway."
+    )
+
+    # This must not be indented inside the safety_flag condition.
+    cols = st.columns(
+        min(
+            len(predictions),
+            4,
         )
-    
-        cols = st.columns(min(len(predictions), 4))
+    )
     
     for col, prediction in zip(
         cols,
-        predictions.values(),
-    ):
+        predictions.values(),):
         with col:
             prediction_card(prediction)
 
