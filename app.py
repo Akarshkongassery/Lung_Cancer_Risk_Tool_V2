@@ -2896,23 +2896,8 @@ def main() -> None:
             use_container_width=True,
         )
 
-        with st.expander("Developer handover: replacing placeholder models"):
-            st.code(
-                """# Replace an entry in MODEL_REGISTRY with an adapter exposing:
-#     predict(features: Mapping[str, Any]) -> Prediction
-#
-# The adapter should load and apply, in this order:
-# 1. feature-name/order mapping
-# 2. fitted imputer/encoder/scaler
-# 3. exported model
-# 4. fitted probability calibrator
-# 5. validated operating threshold
-# 6. explanation method
-MODEL_REGISTRY[\"cprd\"] = CPRDModelAdapter(artifact_directory=\"models/cprd\")""",
-                language="python",
-            )
-
-    render_project_footer()
+        
+        render_project_footer()
 
 
 if __name__ == "__main__":
