@@ -2849,6 +2849,8 @@ def main() -> None:
     st.set_page_config(page_title=APP_TITLE, page_icon="🫁", layout="wide")
     inject_css()
     initialise_state()
+    st.session_state.predictions = {}
+    st.session_state.assessment_complete = False
     mode, selected_models = sidebar()
 
     render_project_header()
