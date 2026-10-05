@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
+from textwrap import dedent
 import math
 import pandas as pd
 from dataclasses import asdict, dataclass
@@ -2622,8 +2624,11 @@ def render_risk_scale(
             "At or above this model's research operating threshold"
         )
 
+
     st.markdown(
-        f"""
+        dedent(
+            f"""
+
         <div style="margin-top:0.75rem; margin-bottom:0.25rem;">
 
             <div style="
@@ -2718,7 +2723,9 @@ def render_risk_scale(
 
             </div>
         </div>
-        """,
+
+        """
+        ),
         unsafe_allow_html=True,
     )
 
