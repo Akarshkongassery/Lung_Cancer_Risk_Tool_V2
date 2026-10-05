@@ -519,7 +519,8 @@ def prediction_card(prediction: Prediction) -> None:
     )
     st.write(f"**{prediction.category}**")
     st.caption(f"Demonstration threshold: {prediction.threshold:.1%} · Input coverage: {prediction.input_coverage:.0%}")
-    st.progress(min(prediction.probability / max(prediction.threshold * 2.0, 0.01), 1.0))
+    render_risk_scale( probability=prediction.probability,
+            threshold=prediction.threshold,)
     st.caption(spec.population)
     st.markdown('</div>', unsafe_allow_html=True)
 
