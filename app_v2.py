@@ -347,6 +347,167 @@ def render_safety_check(features: Mapping[str, Any], context: Mapping[str, Any])
 def run_models(features: Mapping[str, Any], selected_ids: List[str]) -> Dict[str, Prediction]:
     return {model_id: MODEL_REGISTRY[model_id].predict(features) for model_id in selected_ids}
 
+def render_risk_scale(
+    probability: float,
+    threshold: float,
+) -> None:
+    """
+    Display the calibrated probability relative to the model's
+    research operating threshold.
+
+    Zones:
+    - Lower: below 60% of the threshold
+    - Intermediate: 60% of the threshold up to the threshold
+    - Threshold reached: at or above the threshold
+
+    The bar ends at twice the operating threshold so that the
+    threshold is positioned in the centre.
+    """
+
+    probability = float(probability)
+    threshold = float(threshold)
+
+    if threshold <= 0:
+        st.warning("A valid research operating threshold is unavailable.")
+        return
+
+    lower_boundary = threshold * 0.60
+    scale_maximum = threshold * 2.0
+
+    marker_position = min(
+        max((probability / scale_maximum) * 100.0, 0.0),
+        100.0,
+    )
+
+    threshold_position = 50.0
+    lower_boundary_position = (
+        lower_boundary / scale_maximum
+    ) * 100.0
+
+    if probability < lower_boundary:
+        zone_name = "Lower"
+        zone_colour = "#22c55e"
+        interpretation = (
+            "Below 60% of this model's research operating threshold"
+        )
+    elif probability < threshold:
+        zone_name = "Intermediate"
+        zone_colour = "#f59e0b"
+        interpretation = (
+            "Approaching this model's research operating threshold"
+        )
+    else:
+        zone_name = "Threshold reached"
+        zone_colour = "#ef4444"
+        interpretation = (
+            "At or above this model's research operating threshold"
+        )
+
+    st.markdown(
+        f"""
+        <div style="
+            margin-top: 0.75rem;
+            margin-bottom: 0.25rem;
+        ">
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.45rem;
+                font-size: 0.92rem;
+            ">
+                <span>
+                    <strong>Position relative to research threshold</strong>
+                </span>
+                <span style="
+                    color: {zone_colour};
+                    font-weight: 700;
+                ">
+                    {zone_name}
+                </span>
+            </div>
+
+            <div style="
+                position: relative;
+                width: 100%;
+                height: 18px;
+                border-radius: 9px;
+                background:
+                    linear-gradient(
+                        to right,
+                        #22c55e 0%,
+                        #22c55e {lower_boundary_position:.2f}%,
+                        #f59e0b {lower_boundary_position:.2f}%,
+                        #f59e0b {threshold_position:.2f}%,
+                        #ef4444 {threshold_position:.2f}%,
+                        #ef4444 100%
+                    );
+                box-shadow: inset 0 0 0 1px
+                    rgba(255,255,255,0.20);
+            ">
+                <div style="
+                    position: absolute;
+                    left: {marker_position:.2f}%;
+                    top: -6px;
+                    width: 4px;
+                    height: 30px;
+                    background: white;
+                    border: 1px solid #111827;
+                    border-radius: 2px;
+                    transform: translateX(-2px);
+                    box-shadow: 0 1px 4px
+                        rgba(0,0,0,0.50);
+                "></div>
+            </div>
+
+            <div style="
+                position: relative;
+                height: 23px;
+                margin-top: 5px;
+                color: #9ca3af;
+                font-size: 0.76rem;
+            ">
+                <span style="
+                    position: absolute;
+                    left: 0;
+                ">
+                    Lower
+                </span>
+
+                <span style="
+                    position: absolute;
+                    left: {lower_boundary_position:.2f}%;
+                    transform: translateX(-50%);
+                ">
+                    Intermediate
+                </span>
+
+                <span style="
+                    position: absolute;
+                    left: {threshold_position:.2f}%;
+                    transform: translateX(-50%);
+                ">
+                    Threshold
+                </span>
+
+                <span style="
+                    position: absolute;
+                    right: 0;
+                ">
+                    Above threshold
+                </span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.caption(
+        f"{interpretation}. "
+        f"Estimated risk: {probability:.1%} · "
+        f"Research threshold: {threshold:.1%}."
+    )
+
 
 def prediction_card(prediction: Prediction) -> None:
     spec = MODEL_SPECS[prediction.model_id]
