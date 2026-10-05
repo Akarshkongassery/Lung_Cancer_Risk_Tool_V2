@@ -2625,7 +2625,7 @@ def render_risk_scale(
         )
 
 
-    st.markdown(
+    st.html(
         dedent(
             f"""
 
@@ -2724,9 +2724,8 @@ def render_risk_scale(
             </div>
         </div>
 
-        """
-        ),
-        unsafe_allow_html=True,
+            """
+        )
     )
 
     st.caption(
