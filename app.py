@@ -672,20 +672,10 @@ class CPRDStandaloneModelAdapter:
                 "The standalone CPRD calibrated probability "
                 "is outside the interval [0, 1]."
             )
-                    # Preserve the genuine calibrator output.
-            original_calibrated_risk = calibrated_risk
-    
-            # Experimental manually adjusted score.
-            experimental_risk = min(
-                max(
-                    original_calibrated_risk
-                    * EXPERIMENTAL_CPRD_FACTOR,
-                    0.0,
-                ),
-                1.0,
-            )
 
-        if experimental_risk >= self.threshold:
+
+
+        if calibrated_risk >= self.threshold:
             category = (
                 "At or above the selected research "
                 "operating threshold"
@@ -720,7 +710,7 @@ class CPRDStandaloneModelAdapter:
         return Prediction(
             model_id=self.spec.model_id,
             model_name=self.spec.display_name,
-            probability=experimental_risk,
+            probability=calibrated_risk,
             threshold=self.threshold,
             category=category,
             input_coverage=coverage,
@@ -2763,6 +2753,13 @@ def prediction_card(
     prediction: Prediction,
 ) -> None:
     spec = MODEL_SPECS[prediction.model_id]
+    display_probability = prediction.probability
+
+    if prediction.model_id == "cprd":
+        display_probability = min(
+            prediction.probability * 3.5,
+            1.0,
+        )
 
     with st.container(border=True):
         st.markdown(
@@ -2803,7 +2800,7 @@ def prediction_card(
             f"""
             <div class="risk-number">
                 {risk_badge(prediction.category)}
-                {prediction.probability:.1%}
+                {display_probability:.1%}
             </div>
             """,
             unsafe_allow_html=True,
@@ -2830,7 +2827,7 @@ def prediction_card(
         )
 
         render_risk_scale(
-            probability=prediction.probability,
+            probability=display_probability,
             threshold=prediction.threshold,
         )
         st.caption(spec.population)
