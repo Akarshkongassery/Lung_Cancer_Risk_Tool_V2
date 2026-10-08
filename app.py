@@ -34,6 +34,9 @@ from torch import nn
 APP_TITLE = "PHASE IV AI Lung Cancer Risk Assessment"
 APP_SHORT_TITLE = "Lung Cancer Use-Case Demonstrator"
 APP_VERSION = "PHASE IV AI prototype 2.1"
+# Experimental sensitivity-analysis factor for CPRD standalone.
+# This is manually selected and is not a validated recalibration.
+EXPERIMENTAL_CPRD_FACTOR = 3.5
 PROJECT_URL = "https://www.phase4ai-project.eu/"
 PROJECT_NUMBER = "101095384"
 
@@ -182,6 +185,9 @@ class Prediction:
     prediction_horizon_months: Optional[int] = None
     calibrated: bool = False
     placeholder: bool = True
+    original_calibrated_probability: Optional[float] = None
+    experimental_adjustment_factor: Optional[float] = None
+    experimentally_adjusted: bool = False
 class CPRDStandaloneMLP(nn.Module):
     """Exact architecture of the standalone CPRD model."""
 
@@ -666,6 +672,18 @@ class CPRDStandaloneModelAdapter:
                 "The standalone CPRD calibrated probability "
                 "is outside the interval [0, 1]."
             )
+                    # Preserve the genuine calibrator output.
+            original_calibrated_risk = calibrated_risk
+    
+            # Experimental manually adjusted score.
+            experimental_risk = min(
+                max(
+                    original_calibrated_risk
+                    * EXPERIMENTAL_CPRD_FACTOR,
+                    0.0,
+                ),
+                1.0,
+            )
 
         if calibrated_risk >= self.threshold:
             category = (
@@ -702,7 +720,7 @@ class CPRDStandaloneModelAdapter:
         return Prediction(
             model_id=self.spec.model_id,
             model_name=self.spec.display_name,
-            probability=calibrated_risk,
+            probability=experimental_risk,
             threshold=self.threshold,
             category=category,
             input_coverage=coverage,
