@@ -2606,8 +2606,9 @@ def render_risk_scale(
         st.warning("A valid research operating threshold is unavailable.")
         return
 
-    lower_boundary = threshold * 0.60
-    scale_maximum = threshold * 2.0
+    lower_boundary = 0.035
+    higher_boundary = 0.065
+    scale_maximum = 0.10
 
     marker_position = min(
         max((probability / scale_maximum) * 100.0, 0.0),
@@ -2618,7 +2619,9 @@ def render_risk_scale(
         lower_boundary / scale_maximum
     ) * 100.0
 
-    threshold_position = 50.0
+    threshold_position = (
+        higher_boundary / scale_maximum
+    ) * 100.0
 
     if probability < lower_boundary:
         zone_name = "Lower"
@@ -2626,14 +2629,14 @@ def render_risk_scale(
         interpretation = (
             "Below 60% of this model's research operating threshold"
         )
-    elif probability < threshold:
+    elif probability < higher_boundary:
         zone_name = "Intermediate"
         zone_colour = "#f59e0b"
         interpretation = (
             "Approaching this model's research operating threshold"
         )
     else:
-        zone_name = "Threshold reached"
+        zone_name = "Higher"
         zone_colour = "#ef4444"
         interpretation = (
             "At or above this model's research operating threshold"
