@@ -2623,17 +2623,16 @@ def render_risk_scale(
         higher_boundary / scale_maximum
     ) * 100.0
 
+    
+
     if probability < lower_boundary:
         zone_name = "Lower"
-        zone_colour = "#22c55e"
+
     elif probability < higher_boundary:
         zone_name = "Intermediate"
-        zone_colour = "#f59e0b"
+
     else:
         zone_name = "Higher"
-        zone_colour = "#ef4444"
-
-
 
     st.html(
         dedent(
