@@ -685,7 +685,7 @@ class CPRDStandaloneModelAdapter:
                 1.0,
             )
 
-        if calibrated_risk >= self.threshold:
+        if experimental_risk >= self.threshold:
             category = (
                 "At or above the selected research "
                 "operating threshold"
@@ -745,6 +745,13 @@ class CPRDStandaloneModelAdapter:
             ),
             calibrated=True,
             placeholder=False,
+            original_calibrated_probability=(
+                original_calibrated_risk
+            ),
+            experimental_adjustment_factor=(
+                EXPERIMENTAL_CPRD_FACTOR
+            ),
+            experimentally_adjusted=True,
         )
 class HospitalSilverPhenotypeMLP(nn.Module):
     """
