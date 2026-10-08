@@ -2576,7 +2576,6 @@ def render_safety_check(features: Mapping[str, Any], context: Mapping[str, Any])
             unsafe_allow_html=True,
         )
         return True
-    st.success("No configured warning feature was identified. Continue to apply clinical judgement.")
     return False
 
 
