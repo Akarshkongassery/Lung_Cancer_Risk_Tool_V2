@@ -2626,21 +2626,13 @@ def render_risk_scale(
     if probability < lower_boundary:
         zone_name = "Lower"
         zone_colour = "#22c55e"
-        interpretation = (
-            "Below 60% of this model's research operating threshold"
-        )
     elif probability < higher_boundary:
         zone_name = "Intermediate"
         zone_colour = "#f59e0b"
-        interpretation = (
-            "Approaching this model's research operating threshold"
-        )
     else:
         zone_name = "Higher"
         zone_colour = "#ef4444"
-        interpretation = (
-            "At or above this model's research operating threshold"
-        )
+
 
 
     st.html(
