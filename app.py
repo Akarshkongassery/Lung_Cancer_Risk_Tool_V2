@@ -2739,7 +2739,6 @@ def render_risk_scale(
     )
 
     st.caption(
-        f"{interpretation}. "
         f"Estimated risk: {probability:.1%} · "
         f"Research threshold: {threshold:.1%}."
     )
