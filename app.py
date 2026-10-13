@@ -2030,7 +2030,7 @@ class PlaceholderRiskModel:
 
 @st.cache_resource
 
-def load_model_registry() -> Dict[str, Any]:
+def load_model_registry_v2() -> Dict[str, Any]:
     app_directory = Path(__file__).resolve().parent
         
     return {
@@ -2574,7 +2574,7 @@ def run_models(
     features: Mapping[str, Any],
     selected_ids: List[str],
 ) -> Dict[str, Prediction]:
-    registry = load_model_registry()
+    registry = load_model_registry_v2()
 
     return {
         model_id: registry[model_id].predict(features)
