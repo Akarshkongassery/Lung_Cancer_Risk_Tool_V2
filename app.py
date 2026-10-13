@@ -675,6 +675,12 @@ class CPRDStandaloneModelAdapter:
 
 
 
+        original_calibrated_risk = calibrated_risk
+
+
+
+
+
         if calibrated_risk >= self.threshold:
             category = (
                 "At or above the selected research "
