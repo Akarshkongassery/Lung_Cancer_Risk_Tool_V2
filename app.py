@@ -724,31 +724,13 @@ class CPRDStandaloneModelAdapter:
             warnings=warnings,
             contributions=[],
             raw_score=raw_score,
-            calibration_method=(
-                self.calibration_metadata[
-                    "calibration_method"
-                ]
-            ),
-            calibration_population=(
-                self.calibration_metadata[
-                    "calibration_population"
-                ]
-            ),
-            prediction_horizon_months=int(
-                self.calibration_metadata[
-                    "prediction_horizon_months"
-                ]
-            ),
+            calibration_method="logistic_platt",
+            calibration_population="CPRD Aurum",
+            prediction_horizon_months=12,
             calibrated=True,
             placeholder=False,
-            # original_calibrated_probability=(
-            #     original_calibrated_risk
-            # ),
-            # experimental_adjustment_factor=(
-            #     EXPERIMENTAL_CPRD_FACTOR
-            # ),
-            # experimentally_adjusted=True,
         )
+        
 class HospitalSilverPhenotypeMLP(nn.Module):
     """
     Dynamic MLP used by the selected MIMIC-IV and eICU models.
